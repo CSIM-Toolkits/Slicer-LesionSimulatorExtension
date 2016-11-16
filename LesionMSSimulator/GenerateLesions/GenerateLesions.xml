@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>MS Simulator</category>
+  <title>GenerateLesions</title>
+  <description><![CDATA[Use parameters passed by python main script to generate MS lesions on input image.]]></description>
+  <version>0.1.0.$Revision$(alpha)</version>
+  <documentation-url>http://slicer.org/slicerWiki/index.php/Documentation/4.3/Modules/Add</documentation-url>
+  <license/>
+  <contributor>Fabrício Simozo</contributor>
+  <acknowledgements><![CDATA[...]]></acknowledgements>
+  <parameters>
+    <label>IO</label>
+    <description><![CDATA[Input/output parameters]]></description>
+    <image>
+      <name>inputVolume1</name>
+      <label>Input Volume</label>
+      <channel>input</channel>
+      <index>0</index>
+      <description><![CDATA[Input volume]]></description>
+    </image>
+    <image>
+      <name>inputVolume2</name>
+      <label>Probability Volume</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description><![CDATA[Input probability volume]]></description>
+    </image>
+    <image>
+      <name>outputVolume</name>
+      <label>Output Volume</label>
+      <channel>input</channel>
+      <index>2</index>
+      <description><![CDATA[Result volume]]></description>
+    </image>
+  </parameters>
+</executable>
