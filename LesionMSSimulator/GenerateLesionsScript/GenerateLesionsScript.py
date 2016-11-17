@@ -15,17 +15,15 @@ class GenerateLesionsScript(ScriptedLoadableModule):
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "GenerateLesionsScript" # TODO make this more human readable by adding spaces
+    self.parent.title = "Generate Lesions Script"
     self.parent.categories = ["MS Simulator"]
     self.parent.dependencies = []
-    self.parent.contributors = ["Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabrício Henrique Simozo (CSIM - USP - RP)"] # replace with "Firstname Lastname (Organization)"
+    self.parent.contributors = ["Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabricio Henrique Simozo (CSIM - USP - RP)"]
     self.parent.helpText = """
-    This is an example of scripted loadable module bundled in an extension.
-    It performs a simple thresholding on the input volume and optionally captures a screenshot.
+    This scripted module is the main module for MS artificial lesion generation.
     """
     self.parent.acknowledgementText = """
-    This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
-    and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR013218-12S1.
+    ...
 """ # replace with organization, grant and thanks.
 
 #

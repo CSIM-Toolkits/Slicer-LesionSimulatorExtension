@@ -6,7 +6,7 @@
   <version>0.1.0.$Revision$(alpha)</version>
   <documentation-url>http://slicer.org/slicerWiki/index.php/Documentation/4.3/Modules/Add</documentation-url>
   <license/>
-  <contributor>Fabrício Simozo</contributor>
+  <contributor>Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabricio Henrique Simozo (CSIM - USP - RP)</contributor>
   <acknowledgements><![CDATA[...]]></acknowledgements>
   <parameters>
     <label>IO</label>
@@ -28,7 +28,7 @@
     <image>
       <name>outputVolume</name>
       <label>Output Volume</label>
-      <channel>input</channel>
+      <channel>output</channel>
       <index>2</index>
       <description><![CDATA[Result volume]]></description>
     </image>
