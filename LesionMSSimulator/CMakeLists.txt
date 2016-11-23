@@ -18,8 +18,9 @@ include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
 # Extension modules
-add_subdirectory(GenerateLesions)
 add_subdirectory(GenerateLesionsScript)
+add_subdirectory(GenerateMask)
+add_subdirectory(DeformImage)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

@@ -15,7 +15,7 @@
 
 =========================================================================*/
 #include <itkPluginUtilities.h>
-#include "GenerateLesionsCLP.h"
+#include "GenerateMaskCLP.h"
 
 #include <itkImageFileReader.h>
 #include <itkImageFileWriter.h>
@@ -50,15 +50,9 @@ int DoIt( int argc, char * argv[], T )
     typedef itk::ImageFileReader<ImageType>  ReaderType;
     typedef itk::ImageFileWriter<ImageType> WriterType;
 
-    typename ReaderType::Pointer readerIm = ReaderType::New();
     typename ReaderType::Pointer readerProb = ReaderType::New();
 
-    readerIm->SetFileName( inputVolume1.c_str() );
-    readerIm->ReleaseDataFlagOn();
-
-    readerIm->Update();
-
-    readerProb->SetFileName( inputVolume2.c_str() );
+    readerProb->SetFileName( inputVolume.c_str() );
     readerProb->ReleaseDataFlagOn();
 
     readerProb->Update();
@@ -71,15 +65,15 @@ int DoIt( int argc, char * argv[], T )
     int lesion_n=20;
     int lesion_count=0;
     typename ImageType::IndexType indexArray [lesion_n];
+    
+    typename ImageType::RegionType region = readerProb->GetOutput()->GetRequestedRegion();
+    typename ImageType::SizeType size = region.GetSize();
+    int sizeX = size[0];
+    int sizeY = size[2];
+    int sizeZ = size[1];
 
     while(lesion_count<lesion_n){
         //Pick a random coordinate
-        typename ImageType::RegionType region = readerProb->GetOutput()->GetRequestedRegion();
-        typename ImageType::SizeType size = region.GetSize();
-        int sizeX = size[0];
-        int sizeY = size[2];
-        int sizeZ = size[1];
-
         int indexX = rand() % sizeX;
         int indexY = rand() % sizeY;
         int indexZ = rand() % sizeZ;
@@ -101,7 +95,7 @@ int DoIt( int argc, char * argv[], T )
 
     writer->SetFileName( outputVolume.c_str() );
     //writer->SetInput( extract->GetOutput() );
-    writer->SetInput( readerIm->GetOutput() );
+    writer->SetInput( readerProb->GetOutput() );
     writer->SetUseCompression(1);
     writer->Update();
 
@@ -120,7 +114,7 @@ int main( int argc, char * argv[] )
 
     try
     {
-        itk::GetImageType(inputVolume1, pixelType, componentType);
+        itk::GetImageType(inputVolume, pixelType, componentType);
 
         switch( componentType )
         {

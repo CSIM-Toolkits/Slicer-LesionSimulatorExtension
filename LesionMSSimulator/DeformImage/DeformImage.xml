@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>MS Simulator</category>
+  <title>DeformImage</title>
+  <description><![CDATA[Generates MS artificial lesions by deforming Input Image on regions defined by Input Mask]]></description>
+  <version>0.0.1</version>
+  <documentation-url>http://www.example.com/Slicer/Modules/DeformImage</documentation-url>
+  <license>Slicer</license>
+  <contributor>Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabricio Henrique Simozo (CSIM - USP - RP)</contributor>
+  <acknowledgements>This work was partially funded by NIH grant NXNNXXNNNNNN-NNXN</acknowledgements>
+  <parameters>
+    <label>IO</label>
+    <description><![CDATA[Input/output parameters]]></description>
+    <double>
+      <name>sigma</name>
+      <longflag>sigma</longflag>
+      <flag>s</flag>
+      <label>Sigma</label>
+      <description><![CDATA[A double value (in units of mm) passed to the algorithm]]></description>
+      <default>1.0</default>
+    </double>
+    <image>
+      <name>inputVolume</name>
+      <label>Input Volume</label>
+      <channel>input</channel>
+      <index>0</index>
+      <description><![CDATA[Input volume]]></description>
+    </image>
+    <image>
+      <name>outputVolume</name>
+      <label>Output Volume</label>
+      <channel>output</channel>
+      <index>1</index>
+      <description><![CDATA[Output Volume]]></description>
+    </image>
+  </parameters>
+</executable>
