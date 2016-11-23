@@ -44,7 +44,6 @@ int DoIt( int argc, char * argv[], T )
     typedef    T InputPixelType;
     //typedef    T OutputPixelType;
 
-    //typedef itk::Image<InputPixelType,  3> ImageType;
     typedef itk::Image<double,  3> ImageType;
     //typedef itk::Image<OutputPixelType, 3> OutputImageType;
 
@@ -64,19 +63,18 @@ int DoIt( int argc, char * argv[], T )
 
     readerProb->Update();
 
+    //Uses probability to choose indexes for generating the artificial lesions
     typedef itk::ImageRegionIterator<ImageType> IteratorType;
     IteratorType it(readerProb->GetOutput(), readerProb->GetOutput()->GetRequestedRegion());
-
-    //Uses probability to choose indexes for generating the artificial lesions
-    typedef itk::NeighborhoodIterator<ImageType> NbIteratorType;
-    typedef itk::GaussianOperator<double,3> OperatorType;
 
     srand(time(0));
     int lesion_n=20;
     int lesion_count=0;
+    typename ImageType::IndexType indexArray [lesion_n];
+
     while(lesion_count<lesion_n){
         //Pick a random coordinate
-        typename ImageType::RegionType region = readerIm->GetOutput()->GetRequestedRegion();
+        typename ImageType::RegionType region = readerProb->GetOutput()->GetRequestedRegion();
         typename ImageType::SizeType size = region.GetSize();
         int sizeX = size[0];
         int sizeY = size[2];
@@ -87,38 +85,17 @@ int DoIt( int argc, char * argv[], T )
         int indexZ = rand() % sizeZ;
 
         //Checks for probability of voxel in prob. image
-        it.SetIndex({indexX, indexZ, indexY});
+        typename ImageType::IndexType index = {indexX, indexZ, indexY};
+        it.SetIndex(index);
 
         double check = (double)rand()/(double)RAND_MAX;
 
-        //std::cout<<"prob="<<it.Get()<<"   "<<"check="<<check<<std::endl;
-        if(it.Get()>check){
-            //Gets a random size from 2 to 5
-            int rand_size = rand() % 3 + 1;
-            //Defines neighborhood and gaussian operator of random size
-            typename ImageType::SizeType radius;
-            radius.Fill(rand_size);
-
-            OperatorType op;
-            op.CreateToRadius(radius);
-            op.SetVariance(20);
-
-            NbIteratorType nbIt(radius, readerIm->GetOutput(), readerIm->GetOutput()->GetRequestedRegion());
-            nbIt.SetLocation(it.GetIndex());
-
-            for(int i=0; i<nbIt.GetSize()[0]*nbIt.GetSize()[1]*nbIt.GetSize()[2]; i++){
-                try{
-                    //double distrib_value = (6*(double)rand()/(double)RAND_MAX+20)*op.GetElement(i);
-                    double distrib_value = 0*op.GetElement(i);
-                    double image_value = nbIt.GetPixel(i)*(1-op.GetElement(i));
-                    nbIt.SetPixel(i, image_value+distrib_value);
-                }catch(itk::ExceptionObject & e){
-
-                }
-            }
-            ++lesion_count;
-        }
+        if(it.Get()>check)
+            indexArray[lesion_count++]=index;
     }
+
+    for(int i=0; i<lesion_n; i++)
+        std::cout<<indexArray[i]<<std::endl;
 
     typename WriterType::Pointer writer = WriterType::New();
 
