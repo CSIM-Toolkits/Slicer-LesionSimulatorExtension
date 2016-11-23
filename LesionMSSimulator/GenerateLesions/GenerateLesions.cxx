@@ -64,23 +64,8 @@ int DoIt( int argc, char * argv[], T )
 
     readerProb->Update();
 
-    //Normalizing probability image
     typedef itk::ImageRegionIterator<ImageType> IteratorType;
     IteratorType it(readerProb->GetOutput(), readerProb->GetOutput()->GetRequestedRegion());
-
-    /*double sum=0;
-    it.GoToBegin();
-    while(!it.IsAtEnd()){
-        sum+=it.Get();
-        ++it;
-    }
-    std::cout<<"The Sum of values in prob image is ="<<sum<<std::endl;
-    it.GoToBegin();
-    while(!it.IsAtEnd()){
-        it.Set((double)it.Get()/sum);
-        ++it;
-    }*/
-
 
     //Uses probability to choose indexes for generating the artificial lesions
     typedef itk::NeighborhoodIterator<ImageType> NbIteratorType;
@@ -95,12 +80,14 @@ int DoIt( int argc, char * argv[], T )
         typename ImageType::SizeType size = region.GetSize();
         int sizeX = size[0];
         int sizeY = size[2];
+        int sizeZ = size[1];
 
         int indexX = rand() % sizeX;
         int indexY = rand() % sizeY;
+        int indexZ = rand() % sizeZ;
 
         //Checks for probability of voxel in prob. image
-        it.SetIndex({indexX, 0, indexY});
+        it.SetIndex({indexX, indexZ, indexY});
 
         double check = (double)rand()/(double)RAND_MAX;
 

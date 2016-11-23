@@ -21,7 +21,7 @@ SEMMacroBuildCLI(
   TARGET_LIBRARIES ${ITK_LIBRARIES}
   )
 
-#add_subdirectory(Texture)
+#add_subdirectory(Pipeline)
 
 #-----------------------------------------------------------------------------
 if(BUILD_TESTING)
