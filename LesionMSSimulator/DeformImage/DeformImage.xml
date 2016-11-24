@@ -11,27 +11,134 @@
   <parameters>
     <label>IO</label>
     <description><![CDATA[Input/output parameters]]></description>
-    <double>
-      <name>sigma</name>
-      <longflag>sigma</longflag>
-      <flag>s</flag>
-      <label>Sigma</label>
-      <description><![CDATA[A double value (in units of mm) passed to the algorithm]]></description>
-      <default>1.0</default>
-    </double>
-    <image>
+    <image type="scalar">
       <name>inputVolume</name>
       <label>Input Volume</label>
       <channel>input</channel>
       <index>0</index>
-      <description><![CDATA[Input volume]]></description>
+      <description><![CDATA[]]></description>
+    </image>
+    <string-enumeration>
+	      <name>imageModality</name>
+	      <longflag>--type</longflag>
+	      <description><![CDATA[]]></description>
+	      <label>Image Modality</label>
+	      <default>T1</default>
+	      <element>T1</element>
+	      <element>T2</element>
+              <element>T2-FLAIR</element>
+              <element>PD</element>
+              <element>DTI-FA</element>
+              <element>DTI-ADC</element>
+    </string-enumeration>
+    <image type="label">
+      <name>lesionMask</name>
+      <label>Lesion Mask</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description><![CDATA[Lesion mask]]></description>
     </image>
     <image>
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>
-      <index>1</index>
+      <index>2</index>
       <description><![CDATA[Output Volume]]></description>
     </image>
   </parameters>
+<parameters advanced="true">
+<label>Lesion Simulation Parameters</label>
+    <description><![CDATA[Lesion simulation parameters]]></description>
+    <double>
+      <name>sigma</name>
+      <longflag>--sigma</longflag>
+      <label>Lesion Border Smooth Factor</label>
+      <description><![CDATA[Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.]]></description>
+      <default>1.0</default>
+    </double>
+    <double>
+      <name>t1Contrast</name>
+      <longflag>--t1Contrast</longflag>
+      <label>T1 Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>0.861</default>
+    </double>
+    <double>
+      <name>t1Std</name>
+      <longflag>--t1Std</longflag>
+      <label>T1 Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.13</default>
+    </double>
+    <double>
+      <name>t2Contrast</name>
+      <longflag>--t2Contrast</longflag>
+      <label>T2 Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.373</default>
+    </double>
+    <double>
+      <name>t2Std</name>
+      <longflag>--t2Std</longflag>
+      <label>T2 Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.381</default>
+    </double>
+    <double>
+      <name>flairContrast</name>
+      <longflag>--flairContrast</longflag>
+      <label>T2-FLAIR Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.212</default>
+    </double>
+    <double>
+      <name>flairStd</name>
+      <longflag>--flairStd</longflag>
+      <label>T2-FLAIR Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.069</default>
+    </double>
+    <double>
+      <name>pdContrast</name>
+      <longflag>--pdContrast</longflag>
+      <label>PD Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.171</default>
+    </double>
+    <double>
+      <name>pdStd</name>
+      <longflag>--pdStd</longflag>
+      <label>PD Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.129</default>
+    </double>
+    <double>
+      <name>faContrast</name>
+      <longflag>--faContrast</longflag>
+      <label>DTI-FA Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>0.715</default>
+    </double>
+    <double>
+      <name>faStd</name>
+      <longflag>--faStd</longflag>
+      <label>DTI-FA Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.271</default>
+    </double>
+    <double>
+      <name>adcContrast</name>
+      <longflag>--adcContrast</longflag>
+      <label>DTI-ADC Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.082</default>
+    </double>
+    <double>
+      <name>adcStd</name>
+      <longflag>--adcStd</longflag>
+      <label>DTI-ADC Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.091</default>
+    </double>
+</parameters>
 </executable>
