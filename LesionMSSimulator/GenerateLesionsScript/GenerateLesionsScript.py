@@ -83,21 +83,13 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     #
     # threshold value
     #
-    self.imageThresholdSliderWidget = ctk.ctkSliderWidget()
-    self.imageThresholdSliderWidget.singleStep = 0.1
-    self.imageThresholdSliderWidget.minimum = -100
-    self.imageThresholdSliderWidget.maximum = 100
-    self.imageThresholdSliderWidget.value = 0.5
-    self.imageThresholdSliderWidget.setToolTip("Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.")
-    parametersFormLayout.addRow("Image threshold", self.imageThresholdSliderWidget)
-
-    #
-    # check box to trigger taking screen shots for later use in tutorials
-    #
-    self.enableScreenshotsFlagCheckBox = qt.QCheckBox()
-    self.enableScreenshotsFlagCheckBox.checked = 0
-    self.enableScreenshotsFlagCheckBox.setToolTip("If checked, take screen shots for tutorials. Use Save Data to write them to disk.")
-    parametersFormLayout.addRow("Enable Screenshots", self.enableScreenshotsFlagCheckBox)
+    self.lesionLoadSliderWidget = ctk.ctkSliderWidget()
+    self.lesionLoadSliderWidget.singleStep = 1
+    self.lesionLoadSliderWidget.minimum = 0
+    self.lesionLoadSliderWidget.maximum = 100
+    self.lesionLoadSliderWidget.value = 20
+    self.lesionLoadSliderWidget.setToolTip("Set the desired lesion load to be used for MS lesion generation.")
+    parametersFormLayout.addRow("Lesion load", self.lesionLoadSliderWidget)
 
     #
     # Apply Button
@@ -126,9 +118,8 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
 
   def onApplyButton(self):
     logic = GenerateLesionsScriptLogic()
-    enableScreenshotsFlag = self.enableScreenshotsFlagCheckBox.checked
-    imageThreshold = self.imageThresholdSliderWidget.value
-    logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
+    lesionLoad = self.lesionLoadSliderWidget.value
+    logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), lesionLoad)
 
 #
 # GenerateLesionsScriptLogic
@@ -171,44 +162,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
       return False
     return True
 
-  def takeScreenshot(self,name,description,type=-1):
-    # show the message even if not taking a screen shot
-    slicer.util.delayDisplay('Take screenshot: '+description+'.\nResult is available in the Annotations module.', 3000)
-
-    lm = slicer.app.layoutManager()
-    # switch on the type to get the requested window
-    widget = 0
-    if type == slicer.qMRMLScreenShotDialog.FullLayout:
-      # full layout
-      widget = lm.viewport()
-    elif type == slicer.qMRMLScreenShotDialog.ThreeD:
-      # just the 3D window
-      widget = lm.threeDWidget(0).threeDView()
-    elif type == slicer.qMRMLScreenShotDialog.Red:
-      # red slice window
-      widget = lm.sliceWidget("Red")
-    elif type == slicer.qMRMLScreenShotDialog.Yellow:
-      # yellow slice window
-      widget = lm.sliceWidget("Yellow")
-    elif type == slicer.qMRMLScreenShotDialog.Green:
-      # green slice window
-      widget = lm.sliceWidget("Green")
-    else:
-      # default to using the full window
-      widget = slicer.util.mainWindow()
-      # reset the type so that the node is set correctly
-      type = slicer.qMRMLScreenShotDialog.FullLayout
-
-    # grab and convert to vtk image data
-    qpixMap = qt.QPixmap().grabWidget(widget)
-    qimage = qpixMap.toImage()
-    imageData = vtk.vtkImageData()
-    slicer.qMRMLUtils().qImageToVtkImageData(qimage,imageData)
-
-    annotationLogic = slicer.modules.annotations.logic()
-    annotationLogic.CreateSnapShot(name, description, type, 1, imageData)
-
-  def run(self, inputVolume, outputVolume, imageThreshold, enableScreenshots=0):
+  def run(self, inputVolume, outputVolume, lesionLoad):
     """
     Run the actual algorithm
     """
@@ -219,17 +173,49 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     logging.info('Processing started')
 
-    # Compute the thresholded output volume using the Threshold Scalar Volume CLI module
-    cliParams = {'InputVolume': inputVolume.GetID(), 'OutputVolume': outputVolume.GetID(), 'ThresholdValue' : imageThreshold, 'ThresholdType' : 'Above'}
-    cliNode = slicer.cli.run(slicer.modules.thresholdscalarvolume, None, cliParams, wait_for_completion=True)
+    # Pre Pipeline: Get home and database path for module
+    from os.path import expanduser
+    userHome = expanduser("~")
+    databasePath = userHome+"/MSlesion_database"
 
-    # Capture screenshot
-    if enableScreenshots:
-      self.takeScreenshot('GenerateLesionsScriptTest-Start','MyScreenshot',-1)
+    # First Step: Registration between Input Image and MNI Image Space
+    fixed = slicer.util.loadVolume(databasePath+"/MNI152_T1_1mm.nii.gz")
+    fixedNodeName = "MNI152_T1_1mm"
+    fixedNode = slicer.util.getNode(fixedNodeName)
+    cliNode = self.doBrainsFit(fixedNode, inputVolume, inputVolume)
+
+    # Second Step: Find lesion mask using Probability Image, lesion labels and desired Lesion Load
+    probability = slicer.util.loadVolume(databasePath+"/USP-ICBM-MSpriors-46-1mm.nii.gz")
+    probabilityNodeName = "USP-ICBM-MSpriors-46-1mm"
+    probabilityNode = slicer.util.getNode(probabilityNodeName)
+    cliNode1 = self.doGenerateMask(probabilityNode, lesionLoad, outputVolume)
 
     logging.info('Processing completed')
 
     return True
+
+  def doBrainsFit(self, fixedNode, movingNode, resultNode):
+    """
+    Execute the BrainsFit registration
+    :param fixedNode:
+    :param movingNode:
+    :param resultNode:
+    :return:
+    """
+    cliParams = {'fixedVolume': fixedNode, 'movingVolume': movingNode.GetID(), 'outputVolume': resultNode.GetID(),
+                 'samplingPercentage': 0.002, 'useRigid': True, 'useBSpline': True}
+    return( slicer.cli.run(slicer.modules.brainsfit, None, cliParams, wait_for_completion=True) )
+
+  def doGenerateMask(self, probNode, lesionLoad, resultNode):
+    """
+    Execute the BrainsFit registration
+    :param fixedNode:
+    :param movingNode:
+    :param resultNode:
+    :return:
+    """
+    cliParams = {'inputVolume': probNode, 'outputVolume': resultNode.GetID()}
+    return( slicer.cli.run(slicer.modules.generatemask, None, cliParams, wait_for_completion=True) )
 
 
 class GenerateLesionsScriptTest(ScriptedLoadableModuleTest):
