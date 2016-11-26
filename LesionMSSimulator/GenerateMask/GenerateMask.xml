@@ -25,5 +25,12 @@
       <index>2</index>
       <description><![CDATA[Result volume]]></description>
     </image>
+    <integer>
+      <name>lesionLoad</name>
+      <label>Lesion Load</label>
+      <channel>input</channel>
+      <index>3</index>
+      <description><![CDATA[Desired lesion load]]></description>
+    </integer>
   </parameters>
 </executable>
