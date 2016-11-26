@@ -32,7 +32,7 @@
               <element>DTI-ADC</element>
     </string-enumeration>
     <image type="label">
-      <name>lesionMask</name>
+      <name>lesionLabel</name>
       <label>Lesion Mask</label>
       <channel>input</channel>
       <index>1</index>
@@ -55,6 +55,13 @@
       <label>Lesion Border Smooth Factor</label>
       <description><![CDATA[Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.]]></description>
       <default>1.0</default>
+    </double>
+    <double>
+      <name>homogeneity</name>
+      <longflag>--homogeneity</longflag>
+      <label>Lesion Homogeneity Factor</label>
+      <description><![CDATA[Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heteorgenours lesion contrast. This parameter is related to a Gaussian variance given in mm.]]></description>
+      <default>0.5</default>
     </double>
     <double>
       <name>t1Contrast</name>
@@ -140,5 +147,16 @@
       <description><![CDATA[...]]></description>
       <default>0.091</default>
     </double>
+</parameters>
+<parameters advanced="true">
+<label>Extra outputs</label>
+    <description><![CDATA[Extra outputs data for debug purposes.]]></description>
+    <boolean>
+      <name>deformationMapVolume</name>
+      <longflag>--isDefMap</longflag>
+      <label>Lesion Deformation Map</label>
+      <default>false</default>
+      <description><![CDATA[Lesion deformation map used for lesion simulation in the input volume.]]></description>
+    </boolean>
 </parameters>
 </executable>
