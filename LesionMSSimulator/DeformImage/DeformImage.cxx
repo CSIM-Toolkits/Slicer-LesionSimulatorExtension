@@ -37,15 +37,22 @@ int DoIt( int argc, char * argv[], T )
 
     typedef itk::Image<float, 3>    CastImageType;
 
-    typedef itk::ImageFileReader<InputImageType>  ReaderType;
-    typedef itk::ImageFileReader<LabelInputType>  LabelReaderType;
-    typedef itk::ImageFileWriter<OutputImageType> WriterType;
+    typedef itk::ImageFileReader<InputImageType>    ReaderType;
+    typedef itk::ImageFileReader<LabelInputType>    LabelReaderType;
+    typedef itk::ImageFileWriter<OutputImageType>   WriterType;
+    typedef itk::ImageFileWriter<CastImageType>     DebugWriterType;
 
     typedef itk::CastImageFilter<InputImageType, CastImageType>    CastInputType;
     typedef itk::CastImageFilter<CastImageType, OutputImageType>   CastOutputType;
 
+    typedef itk::ImageDuplicator< CastImageType >                                       DuplicatorType;
+    typedef itk::MaskImageFilter<CastImageType, LabelInputType>                         MaskType;
+    typedef itk::ImageRegionIterator<CastImageType>                                     ImageIterator;
+    typedef itk::SmoothingRecursiveGaussianImageFilter<CastImageType, CastImageType>    SmoothType;
+    typedef itk::MultiplyImageFilter<CastImageType, CastImageType>                      MultiplyImageType;
+
     typename ReaderType::Pointer reader = ReaderType::New();
-    typename LabelReaderType::Pointer mask = LabelReaderType::New();
+    typename LabelReaderType::Pointer lesionMask = LabelReaderType::New();
 
     //    Reading volume
     reader->SetFileName( inputVolume.c_str() );
@@ -54,8 +61,8 @@ int DoIt( int argc, char * argv[], T )
     typename CastInputType::Pointer castInput = CastInputType::New();
     castInput->SetInput(reader->GetOutput());
     castInput->Update();
-    mask->SetFileName( lesionMask.c_str() );
-    mask->Update();
+    lesionMask->SetFileName( lesionLabel.c_str() );
+    lesionMask->Update();
 
     itk::Statistics::GaussianDistribution::Pointer gaussian = itk::Statistics::GaussianDistribution::New();
 
@@ -88,7 +95,6 @@ int DoIt( int argc, char * argv[], T )
     }
 
     //Creating deformation map
-    typedef itk::ImageDuplicator< CastImageType > DuplicatorType;
     typename DuplicatorType::Pointer duplicator = DuplicatorType::New();
     duplicator->SetInputImage(castInput->GetOutput());
     duplicator->Update();
@@ -96,7 +102,6 @@ int DoIt( int argc, char * argv[], T )
     typename CastImageType::Pointer deformationMap = CastImageType::New();
     deformationMap = duplicator->GetOutput();
 
-    typedef itk::ImageRegionIterator<CastImageType>    ImageIterator;
     ImageIterator defMapIt(deformationMap, deformationMap->GetBufferedRegion());
     defMapIt.GoToBegin();
     while (!defMapIt.IsAtEnd()) {
@@ -104,24 +109,32 @@ int DoIt( int argc, char * argv[], T )
         defMapIt.Set(gaussian->EvaluateInverseCDF(number));
         ++defMapIt;
     }
-    typedef itk::SmoothingRecursiveGaussianImageFilter<CastImageType, CastImageType> SmoothType;
     typename SmoothType::Pointer smoothDeformationMap = SmoothType::New();
     smoothDeformationMap->SetInput(deformationMap);
-    smoothDeformationMap->SetSigma(2.0);
+    smoothDeformationMap->SetSigma(homogeneity);
 
-    //Mask deformation map and smooth its borders
-    typedef itk::MaskImageFilter<CastImageType, LabelInputType>    MaskType;
-    typename MaskType::Pointer maskDeformationMap = MaskType::New();
-    maskDeformationMap->SetInput(smoothDeformationMap->GetOutput());
-    maskDeformationMap->SetMaskImage(mask->GetOutput());
-    maskDeformationMap->SetOutsideValue(1.0);
+    //Mask deformation map and smooth lesion borders
+    typename MaskType::Pointer lesionMaskDeformationMap = MaskType::New();
+    lesionMaskDeformationMap->SetInput(smoothDeformationMap->GetOutput());
+    lesionMaskDeformationMap->SetMaskImage(lesionMask->GetOutput());
+    lesionMaskDeformationMap->SetOutsideValue(1.0);
 
     typename SmoothType::Pointer smoothLesions = SmoothType::New();
-    smoothLesions->SetInput(maskDeformationMap->GetOutput());
+    smoothLesions->SetInput(lesionMaskDeformationMap->GetOutput());
     smoothLesions->SetSigma(sigma);
+    smoothLesions->Update();
+
+    if (deformationMapVolume) {
+        typename DebugWriterType::Pointer deformationMapWriter = DebugWriterType::New();
+        deformationMapWriter->SetFileName( outputVolume.c_str() );
+        deformationMapWriter->SetInput( smoothLesions->GetOutput() );
+        deformationMapWriter->SetUseCompression(1);
+        deformationMapWriter->Update();
+
+        return EXIT_SUCCESS;
+    }
 
     //Effectivelly apply the deformation map over the input image
-    typedef itk::MultiplyImageFilter<CastImageType, CastImageType>            MultiplyImageType;
     typename MultiplyImageType::Pointer multiply = MultiplyImageType::New();
     multiply->SetInput1(smoothLesions->GetOutput());
     multiply->SetInput2(castInput->GetOutput());
