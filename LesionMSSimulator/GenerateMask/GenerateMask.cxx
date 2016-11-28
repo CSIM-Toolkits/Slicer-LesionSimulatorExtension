@@ -81,6 +81,11 @@ int DoIt( int argc, char * argv[], T )
     typedef itk::ImageRegionIterator<ImageType> IteratorType;
     IteratorType maskIt(maskImage, maskImage->GetRequestedRegion());
 
+    /**TODO
+     * - Seems to be taking a little to long to do. Try to optmize it
+     * - Change the way size group is sorted: in this way, larger lesions are more likely to be selected
+     * - Change it so same lesion cannot be selected more than once
+    **/
     while(currentLoad<desiredLoad){
         //Choose one of the available sizes
         int size = rand() % numberOfSizes;
@@ -89,7 +94,7 @@ int DoIt( int argc, char * argv[], T )
         std::stringstream lesionSS;
         lesionSS << lesion;
         //Reads selected lesion label
-        std::string labelFilePath = path+"/"+nameArray[size]+"/"+lesionSS.str();
+        std::string labelFilePath = path+"/"+nameArray[size]+"/"+lesionSS.str()+".nii.gz";
         readerLabel->SetFileName(labelFilePath.c_str());
         readerLabel->Update();
 
@@ -109,7 +114,7 @@ int DoIt( int argc, char * argv[], T )
         if(currentLoad + loadToAdd > desiredLoad){
             satisfyLesionLoad = false;
             std::cout<<"cant add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
-            //If selected size is surpassing desired load, don't get another lesion from that size group or bigger
+            //If selected size is surpassing desired load, removes the current biggest size group from selection
             //unless size is too big from one of the bigger size group.
             if(loadToAdd<1200)
                 --numberOfSizes;
