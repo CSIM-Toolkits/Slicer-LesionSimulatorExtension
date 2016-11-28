@@ -26,6 +26,7 @@
 
 #include <time.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include <string.h>
 
@@ -60,16 +61,15 @@ int DoIt( int argc, char * argv[], T )
     readerProb->Update();
 
     //Prepare information constants and arrays
-    //std::string path = "/home/fabricio/MSlesion_database/labels-database"; //NEEDS TO COME FROM PYTHON
     std::string path = databasePath;
     int numberOfSizes = 5;
     int infoArray [5] = {586, 440, 150, 80, 23};
     std::string nameArray [5] = {"5-20", "20-75", "75-200", "200-750", "750-more"};
 
     //Prepare constants to use in calculation
-    float desiredLesionLoad = lesionLoad*1000; //Converts from ml to mm^3
+    float desiredLoad = lesionLoad*1000; //Converts from ml to mm^3
     srand(time(0)); //Initializes random seed
-    float currentLesionLoad=0.0; //Initializes load counter
+    float currentLoad=0.0; //Initializes load counter
 
     //Creates mask image
     typename ImageType::Pointer maskImage = ImageType::New();
@@ -81,25 +81,15 @@ int DoIt( int argc, char * argv[], T )
     typedef itk::ImageRegionIterator<ImageType> IteratorType;
     IteratorType maskIt(maskImage, maskImage->GetRequestedRegion());
 
-    while(currentLesionLoad<desiredLesionLoad){
+    while(currentLoad<desiredLoad){
         //Choose one of the available sizes
         int size = rand() % numberOfSizes;
         //Choose one of the available lesions
         int lesion = rand() % infoArray[size];
-
-        //Gets name of label map to be loaded
-        std::ifstream labelInfoFile ( ((std::string) path+"/info_files/"+nameArray[size]+"-info.txt").c_str() );
-        std::string labelFileName;
-        std::string line;
-        if (labelInfoFile.is_open()){
-            //Get next five lines: Number of leasion in each size
-            for(int i=0; getline (labelInfoFile,line) && i<=lesion; i++)
-                if(i==lesion)
-                    labelFileName = line;
-
-            labelInfoFile.close();
-        }
-        std::string labelFilePath = path+"/"+nameArray[size]+"/"+labelFileName;
+        std::stringstream lesionSS;
+        lesionSS << lesion;
+        //Reads selected lesion label
+        std::string labelFilePath = path+"/"+nameArray[size]+"/"+lesionSS.str();
         readerLabel->SetFileName(labelFilePath.c_str());
         readerLabel->Update();
 
@@ -116,11 +106,16 @@ int DoIt( int argc, char * argv[], T )
             }
             ++labelIt;
         }
-        if(currentLesionLoad + loadToAdd > desiredLesionLoad){
+        if(currentLoad + loadToAdd > desiredLoad){
             satisfyLesionLoad = false;
             std::cout<<"cant add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
-            if( size == 0){
-                currentLesionLoad=desiredLesionLoad+1;
+            //If selected size is surpassing desired load, don't get another lesion from that size group or bigger
+            //unless size is too big from one of the bigger size group.
+            if(loadToAdd<1200)
+                --numberOfSizes;
+
+            if( size == 0 ){
+                currentLoad=desiredLoad+1;
                 std::cout<<"breaking"<<std::endl;
                 break;
             }
@@ -148,13 +143,13 @@ int DoIt( int argc, char * argv[], T )
                 if(labelIt.Get()>0){
                     maskIt.SetIndex(labelIt.GetIndex());
                     maskIt.Set(labelIt.Get());
-                    ++currentLesionLoad;
+                    ++currentLoad;
                 }
                 ++labelIt;
             }
 
-            std::cout<<"size = "<<size<<"    lesion = "<<labelFileName<<std::endl;
-            std::cout<<"current lesion load = "<<currentLesionLoad<<"  desired l l = "<<desiredLesionLoad<<std::endl;
+            std::cout<<"size = "<<size<<"    lesion = "<<lesion<<std::endl;
+            std::cout<<"current lesion load = "<<currentLoad<<"  desired lesion load = "<<desiredLoad<<std::endl;
         }
     }
 
