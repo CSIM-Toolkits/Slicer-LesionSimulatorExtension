@@ -188,7 +188,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     probability = slicer.util.loadVolume(databasePath+"/USP-ICBM-MSpriors-46-1mm.nii.gz")
     probabilityNodeName = "USP-ICBM-MSpriors-46-1mm"
     probabilityNode = slicer.util.getNode(probabilityNodeName)
-    cliNode1 = self.doGenerateMask(probabilityNode, lesionLoad, outputVolume)
+    cliNode1 = self.doGenerateMask(probabilityNode, lesionLoad, outputVolume, databasePath+"labels-database")
 
     logging.info('Processing completed')
 
@@ -206,7 +206,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
                  'samplingPercentage': 0.002, 'useRigid': True, 'useBSpline': True}
     return( slicer.cli.run(slicer.modules.brainsfit, None, cliParams, wait_for_completion=True) )
 
-  def doGenerateMask(self, probNode, lesionLoad, resultNode):
+  def doGenerateMask(self, probNode, lesionLoad, resultNode, databasePath):
     """
     Execute the BrainsFit registration
     :param fixedNode:
@@ -214,7 +214,8 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     :param resultNode:
     :return:
     """
-    cliParams = {'inputVolume': probNode, 'outputVolume': resultNode.GetID()}
+    cliParams = {'inputVolume': probNode, 'outputVolume': resultNode.GetID(), 'lesionLoad': lesionLoad,
+                 'databasePath': databasePath}
     return( slicer.cli.run(slicer.modules.generatemask, None, cliParams, wait_for_completion=True) )
 
 

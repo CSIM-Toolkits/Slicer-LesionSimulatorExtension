@@ -22,15 +22,22 @@
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>
-      <index>2</index>
+      <index>1</index>
       <description><![CDATA[Result volume]]></description>
     </image>
     <integer>
       <name>lesionLoad</name>
       <label>Lesion Load</label>
       <channel>input</channel>
-      <index>3</index>
+      <index>2</index>
       <description><![CDATA[Desired lesion load]]></description>
     </integer>
+    <string>
+      <name>databasePath</name>
+      <label>Database Path</label>
+      <channel>input</channel>
+      <index>3</index>
+      <description><![CDATA[Full path for database directory]]></description>
+    </string>
   </parameters>
 </executable>

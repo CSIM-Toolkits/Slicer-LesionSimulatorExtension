@@ -60,7 +60,6 @@ int DoIt( int argc, char * argv[], T )
     readerProb->Update();
 
     //Prepare information constants and arrays
-    //std::string path = "/home/fabricio/MSlesion_database/labels-database"; //NEEDS TO COME FROM PYTHON
     std::string path = databasePath;
     int numberOfSizes = 5;
     int infoArray [5] = {586, 440, 150, 80, 23};
