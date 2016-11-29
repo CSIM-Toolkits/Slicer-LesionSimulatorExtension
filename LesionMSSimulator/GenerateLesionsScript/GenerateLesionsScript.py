@@ -189,9 +189,9 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.lesionLoadSliderWidget.singleStep = 1
     self.lesionLoadSliderWidget.minimum = 5
     self.lesionLoadSliderWidget.maximum = 50
-    self.lesionLoadSliderWidget.value = 20
+    self.lesionLoadSliderWidget.value = 10
     self.lesionLoadSliderWidget.setToolTip("Set the desired lesion load to be used for MS lesion generation.")
-    parametersMSLesionSimulationFormLayout.addRow("Lesion load", self.lesionLoadSliderWidget)
+    parametersMSLesionSimulationFormLayout.addRow("Lesion Load", self.lesionLoadSliderWidget)
 
     #
     # Sigma
@@ -200,7 +200,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.setLesionSigmaWidget.setMaximum(10)
     self.setLesionSigmaWidget.setMinimum(0.1)
     self.setLesionSigmaWidget.setSingleStep(0.01)
-    self.setLesionSigmaWidget.setValue(1.0)
+    self.setLesionSigmaWidget.setValue(0.5)
     self.setLesionSigmaWidget.setToolTip("Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.")
     parametersMSLesionSimulationFormLayout.addRow("Sigma ", self.setLesionSigmaWidget)
 
@@ -232,13 +232,13 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.layout.addStretch(1)
 
     # Refresh Apply button state
-    # self.onSelect()
+    self.onSelect()
 
   def cleanup(self):
     pass
 
-  # def onSelect(self):
-  #   self.applyButton.enabled = self.inputT1Selector.currentNode()  and self.outputSelector.currentNode()
+  def onSelect(self):
+    self.applyButton.enabled = self.inputT1Selector.currentNodeID != ""
 
   def onApplyButton(self):
     logic = GenerateLesionsScriptLogic()
@@ -284,28 +284,12 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
       return False
     return True
 
-  def isValidInputOutputData(self, inputVolumeNode, outputVolumeNode):
-    """Validates if the output is not the same as input
-    """
-    if not inputVolumeNode:
-      logging.debug('isValidInputOutputData failed: no input volume node defined')
-      return False
-    # if not outputVolumeNode:
-    #   logging.debug('isValidInputOutputData failed: no output volume node defined')
-    #   return False
-    # if inputVolumeNode.GetID()==outputVolumeNode.GetID():
-    #   logging.debug('isValidInputOutputData failed: input and output volume is the same. Create a new volume for output to avoid this error.')
-    #   return False
-    return True
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume, inputFAVolume, inputADCVolume, returnSpace,lesionLoad, sigma, homogeneity):
     """
     Run the actual algorithm
     """
 
-    # if not self.isValidInputOutputData(inputT1Volume, outputVolume):
-    #   slicer.util.errorDisplay('Input volume is the same as output volume. Choose a different output volume.')
-    #   return False
 
     logging.info('Processing started')
     slicer.util.showStatusMessage("Processing started")
@@ -382,34 +366,8 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     regMNItoT1Transform = slicer.vtkMRMLBSplineTransformNode()
     slicer.mrmlScene.AddNode(regMNItoT1Transform)
 
-    self.doBrainsFit(inputT1Volume, MNINode, MNI_t1, regMNItoT1Transform)
-    
-    # #Apply registration transform
-    # if inputT2Volume != None:
-    #   T2_t1_MNI = slicer.vtkMRMLScalarVolumeNode()
-    #   slicer.mrmlScene.AddNode(T2_t1_MNI)
-    #
-    #   self.applyRegistrationTransform(T2_t1, fixedNode, T2_t1_MNI, regT1toMNITransform, False)
-    # if inputFAVolume != None:
-    #   FLAIR_t1_MNI = slicer.vtkMRMLScalarVolumeNode()
-    #   slicer.mrmlScene.AddNode(FLAIR_t1_MNI)
-    #
-    #   self.applyRegistrationTransform(FLAIR_t1, fixedNode, FLAIR_t1_MNI, regT1toMNITransform, False)
-    # if inputPDVolume != None:
-    #   PD_t1_MNI = slicer.vtkMRMLScalarVolumeNode()
-    #   slicer.mrmlScene.AddNode(PD_t1_MNI)
-    #
-    #   self.applyRegistrationTransform(PD_t1, fixedNode, PD_t1_MNI, regT1toMNITransform, False)
-    # if inputFAVolume != None:
-    #   FA_t1_MNI = slicer.vtkMRMLScalarVolumeNode()
-    #   slicer.mrmlScene.AddNode(FA_t1_MNI)
-    #
-    #   self.applyRegistrationTransform(FA_t1, fixedNode, FA_t1_MNI, regT1toMNITransform, False)
-    # if inputADCVolume != None:
-    #   ADC_t1_MNI = slicer.vtkMRMLScalarVolumeNode()
-    #   slicer.mrmlScene.AddNode(ADC_t1_MNI)
-    #
-    #   self.applyRegistrationTransform(ADC_t1, fixedNode, ADC_t1_MNI, regT1toMNITransform, False)
+    self.doNonLinearRegistration(inputT1Volume, MNINode, MNI_t1, regMNItoT1Transform)
+
 
     #
     # Second Step: Find lesion mask using Probability Image, lesion labels and desired Lesion Load
@@ -488,7 +446,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
   def conformInputSpace(self, fixedNode, movingNode, resultNode, transform):
     regParams = {}
-    regParams["fixedVolume"] = fixedNode
+    regParams["fixedVolume"] = fixedNode.GetID()
     regParams["movingVolume"] = movingNode.GetID()
     regParams["samplingPercentage"] = 0.002
     regParams["linearTransform"] = transform.GetID()
@@ -499,7 +457,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     slicer.cli.run(slicer.modules.brainsfit, None, regParams, wait_for_completion=True)
 
-  def doBrainsFit(self, fixedNode, movingNode, resultNode, transform):
+  def doNonLinearRegistration(self, fixedNode, movingNode, resultNode, transform):
     """
     Execute the BrainsFit registration
     :param fixedNode:
@@ -508,10 +466,10 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     :return:
     """
     regParams = {}
-    regParams["fixedVolume"] = fixedNode
+    regParams["fixedVolume"] = fixedNode.GetID()
     regParams["movingVolume"] = movingNode.GetID()
     regParams["samplingPercentage"] = 0.002
-    regParams["splineGridSize"] = '5,5,5'
+    regParams["splineGridSize"] = '3,3,3' # Coloquei um valor baixo para testar...
     regParams["outputVolume"] = resultNode.GetID()
     # regParams["linearTransform"] = transform.GetID()
     regParams["bsplineTransform"] = transform.GetID()
@@ -560,6 +518,16 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     slicer.cli.run(slicer.modules.deformimage, None, params, wait_for_completion=True)
 
   def applyRegistrationTransform(self, inputVolume, referenceVolume, outputVolume, warpTransform, doInverse, isLabelMap):
+    """
+    Execute the Resample Volume CLI
+    :param inputVolume:
+    :param referenceVolume:
+    :param outputVolume:
+    :param transformationFile:
+    :param inverseITKTransformation:
+    :param interpolationType:
+    :return:
+    """
     params = {}
     params["inputVolume"] = inputVolume.GetID()
     params["referenceVolume"] = referenceVolume.GetID()
