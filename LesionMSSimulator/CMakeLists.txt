@@ -4,7 +4,7 @@ project(LesionMSSimulator)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "http://slicer.org/slicerWiki/index.php/Documentation/Nightly/Extensions/LesionMSSimulator")
+set(EXTENSION_HOMEPAGE "https://www.slicer.org/wiki/Documentation/Nightly/Extensions/LesionSimulator")
 set(EXTENSION_CATEGORY "MS Simulator")
 set(EXTENSION_CONTRIBUTORS "Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabrício Henrique Simozo (CSIM - USP - RP)")
 set(EXTENSION_DESCRIPTION "This extension creates artificial MS lesion on input image.")
