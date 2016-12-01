@@ -68,84 +68,84 @@
       <longflag>--t1Contrast</longflag>
       <label>T1 Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>0.861</default>
+      <default>0.791</default>
     </double>
     <double>
       <name>t1Std</name>
       <longflag>--t1Std</longflag>
       <label>T1 Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.13</default>
+      <default>0.139</default>
     </double>
     <double>
       <name>t2Contrast</name>
       <longflag>--t2Contrast</longflag>
       <label>T2 Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>1.373</default>
+      <default>1.374</default>
     </double>
     <double>
       <name>t2Std</name>
       <longflag>--t2Std</longflag>
       <label>T2 Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.381</default>
+      <default>0.353</default>
     </double>
     <double>
       <name>flairContrast</name>
       <longflag>--flairContrast</longflag>
       <label>T2-FLAIR Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>1.212</default>
+      <default>1.323</default>
     </double>
     <double>
       <name>flairStd</name>
       <longflag>--flairStd</longflag>
       <label>T2-FLAIR Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.069</default>
+      <default>0.068</default>
     </double>
     <double>
       <name>pdContrast</name>
       <longflag>--pdContrast</longflag>
       <label>PD Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>1.171</default>
+      <default>1.328</default>
     </double>
     <double>
       <name>pdStd</name>
       <longflag>--pdStd</longflag>
       <label>PD Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.129</default>
+      <default>0.133</default>
     </double>
     <double>
       <name>faContrast</name>
       <longflag>--faContrast</longflag>
       <label>DTI-FA Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>0.715</default>
+      <default>0.739</default>
     </double>
     <double>
       <name>faStd</name>
       <longflag>--faStd</longflag>
       <label>DTI-FA Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.271</default>
+      <default>0.177</default>
     </double>
     <double>
       <name>adcContrast</name>
       <longflag>--adcContrast</longflag>
       <label>DTI-ADC Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>1.082</default>
+      <default>1.214</default>
     </double>
     <double>
       <name>adcStd</name>
       <longflag>--adcStd</longflag>
       <label>DTI-ADC Lesion Sigma</label>
       <description><![CDATA[...]]></description>
-      <default>0.091</default>
+      <default>0.134</default>
     </double>
 </parameters>
 <parameters advanced="true">
@@ -156,7 +156,7 @@
       <longflag>--isDefMap</longflag>
       <label>Lesion Deformation Map</label>
       <default>false</default>
-      <description><![CDATA[Lesion deformation map used for lesion simulation in the input volume.]]></description>
+      <description><![CDATA[Lesion deformation map used for lesion simulation in the input volume. If selected, the output volume is overwrited.]]></description>
     </boolean>
 </parameters>
 </executable>
