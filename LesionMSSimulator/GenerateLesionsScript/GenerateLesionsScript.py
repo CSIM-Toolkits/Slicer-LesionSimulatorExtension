@@ -464,11 +464,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     slicer.mrmlScene.RemoveNode(probabilityNode)
     slicer.mrmlScene.RemoveNode(MNINode)
 
-    if outputLesionLabel != None:
-      name=outputLesionLabel.GetName()
-      outputLesionLabel.Copy(lesionMap)
-      outputLesionLabel.SetName(name)
-    else:
+    if outputLesionLabel == None:
       slicer.mrmlScene.RemoveNode(lesionMap)
 
     if inputFLAIRVolume != None:
