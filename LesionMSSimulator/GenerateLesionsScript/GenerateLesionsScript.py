@@ -160,20 +160,21 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.inputADCSelector.setToolTip("A DTI-ADC map from a healthy individual.")
     parametersInputFormLayout.addRow("DTI-ADC Map ", self.inputADCSelector)
 
-    # #
-    # # output volume selector
-    # #
-    # self.outputSelector = slicer.qMRMLNodeComboBox()
-    # self.outputSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
-    # self.outputSelector.selectNodeUponCreation = True
-    # self.outputSelector.addEnabled = True
-    # self.outputSelector.removeEnabled = True
-    # self.outputSelector.noneEnabled = False
-    # self.outputSelector.showHidden = False
-    # self.outputSelector.showChildNodeTypes = False
-    # self.outputSelector.setMRMLScene( slicer.mrmlScene )
-    # self.outputSelector.setToolTip( "Pick the output to the algorithm." )
-    # parametersInputFormLayout.addRow("Output Volume: ", self.outputSelector)
+    #
+    # output lesion label selector
+    #
+    self.outputLesionLabelSelector = slicer.qMRMLNodeComboBox()
+    self.outputLesionLabelSelector.nodeTypes = ["vtkMRMLLabelMapVolumeNode"]
+    self.outputLesionLabelSelector.selectNodeUponCreation = True
+    self.outputLesionLabelSelector.addEnabled = True
+    self.outputLesionLabelSelector.renameEnabled = True
+    self.outputLesionLabelSelector.removeEnabled = True
+    self.outputLesionLabelSelector.noneEnabled = True
+    self.outputLesionLabelSelector.showHidden = False
+    self.outputLesionLabelSelector.showChildNodeTypes = False
+    self.outputLesionLabelSelector.setMRMLScene( slicer.mrmlScene )
+    self.outputLesionLabelSelector.setToolTip( "Pick the output lesion label." )
+    parametersInputFormLayout.addRow("Output Lesion Label ", self.outputLesionLabelSelector)
 
     #
     # Return inputs to original space
@@ -213,7 +214,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.setLesionSigmaWidget.setMaximum(10)
     self.setLesionSigmaWidget.setMinimum(0.1)
     self.setLesionSigmaWidget.setSingleStep(0.01)
-    self.setLesionSigmaWidget.setValue(0.5)
+    self.setLesionSigmaWidget.setValue(1.0)
     self.setLesionSigmaWidget.setToolTip("Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.")
     parametersMSLesionSimulationFormLayout.addRow("Sigma ", self.setLesionSigmaWidget)
 
@@ -265,6 +266,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
               , self.inputPDSelector.currentNode()
               , self.inputFASelector.currentNode()
               , self.inputADCSelector.currentNode()
+              , self.outputLesionLabelSelector.currentNode()
               , returnSpace
               , lesionLoad
               , sigma
@@ -298,7 +300,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     return True
 
 
-  def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume, inputFAVolume, inputADCVolume, returnSpace,lesionLoad, sigma, homogeneity):
+  def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume, inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace,lesionLoad, sigma, homogeneity):
     """
     Run the actual algorithm
     """
@@ -386,8 +388,11 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     # Second Step: Find lesion mask using Probability Image, lesion labels and desired Lesion Load
     #
     slicer.util.showStatusMessage("Step 3/...: Simulating MS lesion map...")
-    lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
-    slicer.mrmlScene.AddNode(lesionMap)
+    if outputLesionLabel != None:
+      lesionMap = outputLesionLabel
+    else:
+      lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMap)
     if platform.system() is "Windows":
       slicer.util.loadVolume(databasePath + "\\USP-ICBM-MSpriors-46-1mm.nii.gz")
       probabilityNodeName = "USP-ICBM-MSpriors-46-1mm"
@@ -397,7 +402,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     probabilityNode = slicer.util.getNode(probabilityNodeName)
     if platform.system() is "Windows":
-      self.doGenerateMask(MNI, lesionLoad, lesionMap, databasePath+"\\labels-database")
+      self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
       self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath + "/labels-database")
 
@@ -452,6 +457,36 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
         # DTI-ADC inverse transform
         self.applyRegistrationTransform(ADC_t1, inputADCVolume, inputADCVolume, regADCtoT1Transform, True, False)
 
+
+    # Removing unnecessary nodes
+    slicer.mrmlScene.RemoveNode(MNI_t1)
+    slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
+    slicer.mrmlScene.RemoveNode(probabilityNode)
+    slicer.mrmlScene.RemoveNode(MNINode)
+
+    if outputLesionLabel != None:
+      name=outputLesionLabel.GetName()
+      outputLesionLabel.Copy(lesionMap)
+      outputLesionLabel.SetName(name)
+    else:
+      slicer.mrmlScene.RemoveNode(lesionMap)
+
+    if inputFLAIRVolume != None:
+      slicer.mrmlScene.RemoveNode(regT2toT1Transform)
+      slicer.mrmlScene.RemoveNode(T2_t1)
+    if inputT2Volume != None:
+      slicer.mrmlScene.RemoveNode(regFLAIRtoT1Transform)
+      slicer.mrmlScene.RemoveNode(FLAIR_t1)
+    if inputPDVolume != None:
+      slicer.mrmlScene.RemoveNode(regPDtoT1Transform)
+      slicer.mrmlScene.RemoveNode(PD_t1)
+    if inputFAVolume != None:
+      slicer.mrmlScene.RemoveNode(regFAtoT1Transform)
+      slicer.mrmlScene.RemoveNode(FA_t1)
+    if inputADCVolume != None:
+      slicer.mrmlScene.RemoveNode(regADCtoT1Transform)
+      slicer.mrmlScene.RemoveNode(ADC_t1)
+
     slicer.util.showStatusMessage("Processing completed")
     logging.info('Processing completed')
 
@@ -487,14 +522,12 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     # regParams["linearTransform"] = transform.GetID()
     regParams["bsplineTransform"] = transform.GetID()
     regParams["initializeTransformMode"] = "useMomentsAlign"
+    # regParams["histogramMatch"] = True
     regParams["useRigid"] = True
     regParams["useAffine"] = True
     regParams["useBSpline"] = True
 
     slicer.cli.run(slicer.modules.brainsfit, None, regParams, wait_for_completion=True)
-    # cliParams = {'fixedVolume': fixedNode, 'movingVolume': movingNode.GetID(), 'outputVolume': resultNode.GetID(),
-    #              'samplingPercentage': 0.002, 'useRigid': True, 'useAffine': True, 'useBSpline': True}
-    # slicer.cli.run(slicer.modules.brainsfit, None, cliParams, wait_for_completion=True)
 
   def doGenerateMask(self, probNode, lesionLoad, resultNode, databasePath):
     """
@@ -536,22 +569,26 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     :param inputVolume:
     :param referenceVolume:
     :param outputVolume:
-    :param transformationFile:
-    :param inverseITKTransformation:
-    :param interpolationType:
+    :param pixelType:
+    :param warpTransform:
+    :param inverseTransform:
+    :param interpolationMode:
     :return:
     """
     params = {}
     params["inputVolume"] = inputVolume.GetID()
     params["referenceVolume"] = referenceVolume.GetID()
     params["outputVolume"] = outputVolume.GetID()
-    params["transformationFile"] = warpTransform.GetID()
-    # params["typeOfField"] = "displacement"
-    params["inverseITKTransformation"] = doInverse
+    params["warpTransform"] = warpTransform.GetID()
+    params["inverseTransform"] = doInverse
     if isLabelMap:
-      params["interpolationType"] = "nn"
+      params["interpolationMode"] = "NearestNeighbor"
+      params["pixelType"] = "binary"
+    else:
+      params["interpolationMode"] = "Linear"
+      params["pixelType"] = "float"
 
-    slicer.cli.run(slicer.modules.resamplescalarvectordwivolume, None, params, wait_for_completion=True)
+    slicer.cli.run(slicer.modules.brainsresample, None, params, wait_for_completion=True)
 
 
 class GenerateLesionsScriptTest(ScriptedLoadableModuleTest):
