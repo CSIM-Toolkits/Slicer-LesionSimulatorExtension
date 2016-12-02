@@ -43,16 +43,17 @@ int DoIt( int argc, char * argv[], T )
     PARSE_ARGS;
 
     typedef    T InputPixelType;
-    typedef    T OutputPixelType;
+    typedef    unsigned char  LabelPixelType;
 
-    typedef itk::Image<double,  3> ImageType;
-    typedef itk::Image<OutputPixelType, 3> OutputImageType;
+    typedef itk::Image<InputPixelType,  3> ImageType;
+    typedef itk::Image<LabelPixelType, 3> LabelImageType;
 
     typedef itk::ImageFileReader<ImageType>  ReaderType;
-    typedef itk::ImageFileWriter<ImageType> WriterType;
+    typedef itk::ImageFileReader<LabelImageType>  LabelReaderType;
+    typedef itk::ImageFileWriter<LabelImageType> WriterType;
 
     typename ReaderType::Pointer readerProb = ReaderType::New();
-    typename ReaderType::Pointer readerLabel = ReaderType::New();
+    typename LabelReaderType::Pointer readerLabel = LabelReaderType::New();
 
     readerProb->SetFileName( inputVolume.c_str() );
     readerProb->ReleaseDataFlagOn();
@@ -71,14 +72,14 @@ int DoIt( int argc, char * argv[], T )
     float currentLoad=0.0; //Initializes load counter
 
     //Creates mask image
-    typename ImageType::Pointer maskImage = ImageType::New();
+    typename LabelImageType::Pointer maskImage = LabelImageType::New();
     maskImage->CopyInformation(readerProb->GetOutput());
     maskImage->SetRegions(readerProb->GetOutput()->GetRequestedRegion());
     maskImage->Allocate();
     maskImage->FillBuffer(0);
 
-    typedef itk::ImageRegionIterator<ImageType> IteratorType;
-    IteratorType maskIt(maskImage, maskImage->GetRequestedRegion());
+    typedef itk::ImageRegionIterator<LabelImageType> LabelIteratorType;
+    LabelIteratorType maskIt(maskImage, maskImage->GetRequestedRegion());
 
     /**TODO
      * - Seems to be taking a little to long to do. Try to optmize it
@@ -97,7 +98,7 @@ int DoIt( int argc, char * argv[], T )
         readerLabel->SetFileName(labelFilePath.c_str());
         readerLabel->Update();
 
-        IteratorType labelIt(readerLabel->GetOutput(), readerLabel->GetOutput()->GetRequestedRegion());
+        LabelIteratorType labelIt(readerLabel->GetOutput(), readerLabel->GetOutput()->GetRequestedRegion());
 
         //Checks if desired lesion load wond be surpassed by too much
         bool satisfyLesionLoad = true;

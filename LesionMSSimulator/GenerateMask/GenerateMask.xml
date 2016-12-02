@@ -18,7 +18,7 @@
       <index>0</index>
       <description><![CDATA[Input probability volume]]></description>
     </image>
-    <image>
+    <image type="label">>
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>

@@ -368,10 +368,10 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     #
     slicer.util.showStatusMessage("Step 2/...: MNI152 template to native space...")
     if platform.system() is "Windows":
-      slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz")
+      slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm.nii.gz")
     else:
-      slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm_brain.nii.gz")
-    MNINodeName = "MNI152_T1_1mm_brain"
+      slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz")
+    MNINodeName = "MNI152_T1_1mm"
     MNINode = slicer.util.getNode(MNINodeName)
 
     MNI_t1 = slicer.vtkMRMLScalarVolumeNode()
@@ -397,7 +397,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     probabilityNode = slicer.util.getNode(probabilityNodeName)
     if platform.system() is "Windows":
-      self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath+"\\labels-database")
+      self.doGenerateMask(MNI, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
       self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath + "/labels-database")
 
