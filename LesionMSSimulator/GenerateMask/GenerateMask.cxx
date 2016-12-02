@@ -22,6 +22,7 @@
 #include <itkImageRegionIterator.h>
 
 #include <itkAddImageFilter.h>
+#include <itkStatisticsImageFilter.h>
 
 #include <time.h>
 #include <math.h>
@@ -63,7 +64,8 @@ int DoIt( int argc, char * argv[], T )
     //Prepare information constants and arrays
     std::string path = databasePath;
     int numberOfSizes = 5;
-    int infoArray [5] = {282, 257, 33, 21, 24};
+    int infoArray [5] = {283, 258, 34, 22, 25};
+    int maxSizeArray [5] = {100, 500, 1000, 5000, 15000};
     std::string nameArray [5] = {"50-100", "100-500", "500-1000", "1000-5000", "5000-more"};
 
     //Prepare constants to use in calculation
@@ -81,80 +83,90 @@ int DoIt( int argc, char * argv[], T )
     typedef itk::ImageRegionIterator<LabelImageType> LabelIteratorType;
     LabelIteratorType maskIt(maskImage, maskImage->GetRequestedRegion());
 
+    typedef itk::StatisticsImageFilter<LabelImageType> LabelStatisticsFilterType;
+    typename LabelStatisticsFilterType::Pointer statistics = LabelStatisticsFilterType::New();
+
     /**TODO
      * - Seems to be taking a little to long to do. Try to optmize it
-     * - Change the way size group is sorted: in this way, larger lesions are more likely to be selected
      * - Change it so same lesion cannot be selected more than once
+     * - Interrupts the search of that size if all lesios were searched and no match was found
     **/
+    int count = 0;//If this counter reaches a specific number, reduces the size of the search
     while(currentLoad<desiredLoad){
-        //Choose one of the available sizes
-        int size = rand() % numberOfSizes;
-        //Choose one of the available lesions
-        int lesion = rand() % infoArray[size];
-        std::stringstream lesionSS;
-        lesionSS << lesion;
-        //Reads selected lesion label
-        std::string labelFilePath = path+"/"+nameArray[size]+"/"+lesionSS.str()+".nii.gz";
-        readerLabel->SetFileName(labelFilePath.c_str());
-        readerLabel->Update();
+        int size = numberOfSizes-1;
+        bool okToSearch = true;
+        //Checks if it is trying to get a lesion from a bigger category than it should
 
-        LabelIteratorType labelIt(readerLabel->GetOutput(), readerLabel->GetOutput()->GetRequestedRegion());
-
-        //Checks if desired lesion load wond be surpassed by too much
-        bool satisfyLesionLoad = true;
-        int loadToAdd = 0;
-
-        labelIt.GoToBegin();
-        while(!labelIt.IsAtEnd()){
-            if(labelIt.Get()>0){
-                ++loadToAdd;
-            }
-            ++labelIt;
-        }
-        if(currentLoad + loadToAdd > desiredLoad){
-            satisfyLesionLoad = false;
-            std::cout<<"cant add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
-            //If selected size is surpassing desired load, removes the current biggest size group from selection
-            //unless size is too big from one of the bigger size group.
-            if(loadToAdd<1200)
-                --numberOfSizes;
-
-            if( size == 0 ){
-                currentLoad=desiredLoad+1;
-                std::cout<<"breaking"<<std::endl;
+        if((desiredLoad-currentLoad)<=maxSizeArray[size] || count>=infoArray[size]){
+            --numberOfSizes;
+            count=0;
+            if(numberOfSizes == 0)
                 break;
-            }
+            okToSearch = false;
         }
+        if(okToSearch){
+            //Choose one of the available lesions
+            int lesion = rand() % infoArray[size];
+            std::stringstream lesionSS;
+            lesionSS << lesion;
+            //Reads selected lesion label
+            std::string labelFilePath = path+"/"+nameArray[size]+"/"+lesionSS.str()+".nii.gz";
+            readerLabel->SetFileName(labelFilePath.c_str());
+            readerLabel->Update();
 
-        //Checks if lesion is going to overlap another already selected lesion
-        bool wontOverlap = true;
+            LabelIteratorType labelIt(readerLabel->GetOutput(), readerLabel->GetOutput()->GetRequestedRegion());
 
-        labelIt.GoToBegin();
-        while(!labelIt.IsAtEnd()){
-            if(labelIt.Get()>0){
-                maskIt.SetIndex(labelIt.GetIndex());
-                if(maskIt.Get()>0){
-                    wontOverlap = false;
+            //Checks if desired lesion load wond be surpassed by too much
+            bool satisfyLesionLoad = true;
+            int loadToAdd = 0;
+
+            statistics->SetInput(readerLabel->GetOutput());
+            statistics->Update();
+            loadToAdd = statistics->GetSum();
+
+            if(currentLoad + loadToAdd > desiredLoad){
+                satisfyLesionLoad = false;
+                std::cout<<"cant add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
+
+                if( size == 0 ){
+                    currentLoad=desiredLoad+1;
+                    std::cout<<"breaking"<<std::endl;
                     break;
                 }
             }
-            ++labelIt;
-        }
 
-        if(wontOverlap && satisfyLesionLoad){
-            //Adds label to mask
+            //Checks if lesion is going to overlap another already selected lesion
+            bool wontOverlap = true;
+
             labelIt.GoToBegin();
             while(!labelIt.IsAtEnd()){
                 if(labelIt.Get()>0){
                     maskIt.SetIndex(labelIt.GetIndex());
-                    maskIt.Set(labelIt.Get());
-                    ++currentLoad;
+                    if(maskIt.Get()>0 && size<4){
+                        wontOverlap = false;
+                        break;
+                    }
                 }
                 ++labelIt;
             }
 
-            std::cout<<"size = "<<size<<"    lesion = "<<lesion<<std::endl;
-            std::cout<<"current lesion load = "<<currentLoad<<"  desired lesion load = "<<desiredLoad<<std::endl;
+            if(wontOverlap && satisfyLesionLoad){
+                //Adds label to mask
+                labelIt.GoToBegin();
+                while(!labelIt.IsAtEnd()){
+                    maskIt.SetIndex(labelIt.GetIndex());
+                    if(labelIt.Get()>0 && maskIt.Get()==0){
+                        maskIt.Set(labelIt.Get());
+                        ++currentLoad;
+                    }
+                    ++labelIt;
+                }
+
+                std::cout<<"size = "<<size<<"    lesion = "<<lesion<<std::endl;
+                std::cout<<"current lesion load = "<<currentLoad<<"  desired lesion load = "<<desiredLoad<<std::endl;
+            }else
+                ++count;
+
         }
     }
 
