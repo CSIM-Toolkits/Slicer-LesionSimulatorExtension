@@ -63,8 +63,8 @@ int DoIt( int argc, char * argv[], T )
     //Prepare information constants and arrays
     std::string path = databasePath;
     int numberOfSizes = 5;
-    int infoArray [5] = {586, 440, 150, 80, 23};
-    std::string nameArray [5] = {"5-20", "20-75", "75-200", "200-750", "750-more"};
+    int infoArray [5] = {282, 257, 33, 21, 24};
+    std::string nameArray [5] = {"50-100", "100-500", "500-1000", "1000-5000", "5000-more"};
 
     //Prepare constants to use in calculation
     float desiredLoad = lesionLoad*1000; //Converts from ml to mm^3
