@@ -20,9 +20,13 @@
 #include "itkImageDuplicator.h"
 #include "itkGaussianDistribution.h"
 #include "itkImageRegionIterator.h"
-#include "itkMaskImageFilter.h"
+#include "itkMaskNegatedImageFilter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 #include "itkMultiplyImageFilter.h"
+#include "itkConnectedComponentImageFilter.h"
+#include "itkRelabelComponentImageFilter.h"
+#include "itkNormalVariateGenerator.h"
+#include "itkImageRegionIterator.h"
 
 #include "itkPluginUtilities.h"
 
@@ -62,10 +66,17 @@ int DoIt( int argc, char * argv[], T )
     typedef itk::CastImageFilter<CastImageType, OutputImageType>   CastOutputType;
 
     typedef itk::ImageDuplicator< CastImageType >                                       DuplicatorType;
+
     typedef itk::MaskImageFilter<CastImageType, LabelInputType>                         MaskType;
+    typedef itk::MaskNegatedImageFilter<CastImageType, LabelInputType>                  MaskNegateType;
+
     typedef itk::ImageRegionIterator<CastImageType>                                     ImageIterator;
     typedef itk::SmoothingRecursiveGaussianImageFilter<CastImageType, CastImageType>    SmoothType;
     typedef itk::MultiplyImageFilter<CastImageType, CastImageType>                      MultiplyImageType;
+    typedef itk::ConnectedComponentImageFilter<LabelInputType, LabelInputType>          ConnectedType;
+    typedef itk::RelabelComponentImageFilter<LabelInputType, LabelInputType>            RelabelerType;
+    typedef itk::Statistics::NormalVariateGenerator                                     GeneratorType;
+    typedef itk::ImageRegionIterator<CastImageType>                                     IteratorType;
 
     typename ReaderType::Pointer reader = ReaderType::New();
     typename LabelReaderType::Pointer lesionMask = LabelReaderType::New();
@@ -82,8 +93,7 @@ int DoIt( int argc, char * argv[], T )
 
     itk::Statistics::GaussianDistribution::Pointer gaussian = itk::Statistics::GaussianDistribution::New();
 
-        //Adjusting the Gaussian Lesion Distribution
-    double number;
+    //Adjusting the Gaussian Lesion Distribution
     if (imageModality=="T1") {
         //Apply deformation: T1 Volume
         gaussian->SetMean(t1Contrast);
@@ -109,6 +119,9 @@ int DoIt( int argc, char * argv[], T )
         gaussian->SetMean(adcContrast);
         gaussian->SetVariance(adcStd*adcStd);
     }
+    cout<<"Lesion intensity distribution ("<<imageModality<<") - Mean: "<<gaussian->GetMean()<<" and Variance: "<<gaussian->GetVariance()<<endl;
+    typename GeneratorType::Pointer normalGenerator = GeneratorType::New();
+    normalGenerator->Initialize(rand());
 
     //Creating deformation map
     typename DuplicatorType::Pointer duplicator = DuplicatorType::New();
@@ -121,26 +134,78 @@ int DoIt( int argc, char * argv[], T )
     ImageIterator defMapIt(deformationMap, deformationMap->GetBufferedRegion());
     defMapIt.GoToBegin();
     while (!defMapIt.IsAtEnd()) {
-        number = (double)(rand())/(double)(RAND_MAX);
-        defMapIt.Set(gaussian->EvaluateInverseCDF(number));
+        defMapIt.Set(normalGenerator->GetVariate()*sqrt(gaussian->GetVariance()) + gaussian->GetMean());
         ++defMapIt;
     }
     typename SmoothType::Pointer smoothDeformationMap = SmoothType::New();
     smoothDeformationMap->SetInput(deformationMap);
     smoothDeformationMap->SetSigma(homogeneity);
 
-    //Mask deformation map and smooth lesion borders
-    typename MaskType::Pointer lesionMaskDeformationMap = MaskType::New();
+    //Mask deformation map, adding independent intensity levels, and smooth lesion borders
+    CastImageType::Pointer lesionMaskDeformationMapDCLevel = CastImageType::New();
+    lesionMaskDeformationMapDCLevel->CopyInformation(lesionMask->GetOutput());
+    lesionMaskDeformationMapDCLevel->SetRegions(lesionMask->GetOutput()->GetBufferedRegion());
+    lesionMaskDeformationMapDCLevel->SetSpacing(lesionMask->GetOutput()->GetSpacing());
+    lesionMaskDeformationMapDCLevel->SetOrigin(lesionMask->GetOutput()->GetOrigin());
+    lesionMaskDeformationMapDCLevel->Allocate();
+
+    typename MaskNegateType::Pointer lesionMaskDeformationMap = MaskNegateType::New();
     lesionMaskDeformationMap->SetInput(smoothDeformationMap->GetOutput());
-    lesionMaskDeformationMap->SetMaskImage(lesionMask->GetOutput());
-    lesionMaskDeformationMap->SetOutsideValue(1.0);
+    lesionMaskDeformationMap->SetOutsideValue(0.0);
+
+    typename ConnectedType::Pointer connectedLesions = ConnectedType::New();
+    connectedLesions->SetInput(lesionMask->GetOutput());
+    connectedLesions->Update();
+
+    typename RelabelerType::Pointer sortLesions = RelabelerType::New();
+    sortLesions->SetInput(connectedLesions->GetOutput());
+    sortLesions->SetSortByObjectSize(true);
+    sortLesions->Update();
+    int nLesion = sortLesions->GetNumberOfObjects();
+    cout<<"Number of considered lesions: "<<nLesion<<endl;
+
+    float DClevel=0.0;
+    cout<<"Generating lesion ("<<variability<<" standard deviations from the "<<imageModality<<" lesion database): "<<endl;
+    for (unsigned int lesion = 1; lesion <= nLesion; ++lesion) {
+        cout<<lesion<<" - Mean intensity: "<<gaussian->GetMean()+DClevel<<endl;
+        lesionMaskDeformationMap->SetMaskImage(sortLesions->GetOutput());
+        lesionMaskDeformationMap->SetMaskingValue(lesion);
+        lesionMaskDeformationMap->Update();
+
+        IteratorType addLesion(lesionMaskDeformationMapDCLevel,lesionMaskDeformationMapDCLevel->GetBufferedRegion());
+        IteratorType lesionIt(lesionMaskDeformationMap->GetOutput(),lesionMaskDeformationMap->GetOutput()->GetBufferedRegion());
+        addLesion.GoToBegin();
+        lesionIt.GoToBegin();
+        DClevel = static_cast<float>(normalGenerator->GetVariate());
+        while(abs(DClevel)>variability*sqrt(gaussian->GetVariance())){
+            DClevel = static_cast<float>(normalGenerator->GetVariate());
+        }
+
+        while (!addLesion.IsAtEnd()) {
+            if (lesionIt.Get()!=static_cast<float>(0)) {
+                addLesion.Set(lesionIt.Get()+DClevel);
+                ++addLesion;
+                ++lesionIt;
+            }else{
+                ++addLesion;
+                ++lesionIt;
+            }
+        }
+    }
+
+    typename MaskType::Pointer finalDeformationMap = MaskType::New();
+    finalDeformationMap->SetInput(lesionMaskDeformationMapDCLevel);
+    finalDeformationMap->SetMaskImage(lesionMask->GetOutput());
+    finalDeformationMap->SetOutsideValue(1.0);
 
     typename SmoothType::Pointer smoothLesions = SmoothType::New();
-    smoothLesions->SetInput(lesionMaskDeformationMap->GetOutput());
+    smoothLesions->SetInput(finalDeformationMap->GetOutput());
     smoothLesions->SetSigma(sigma);
     smoothLesions->Update();
 
+
     if (deformationMapVolume) {
+        cout<<"Output lesion deformation map was requested"<<endl;
         typename DebugWriterType::Pointer deformationMapWriter = DebugWriterType::New();
         deformationMapWriter->SetFileName( outputVolume.c_str() );
         deformationMapWriter->SetInput( smoothLesions->GetOutput() );

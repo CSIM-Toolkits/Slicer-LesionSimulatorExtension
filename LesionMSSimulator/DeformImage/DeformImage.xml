@@ -50,6 +50,18 @@
 <label>Lesion Simulation Parameters</label>
     <description><![CDATA[Lesion simulation parameters]]></description>
     <double>
+      <name>variability</name>
+      <longflag>--variability</longflag>
+      <label>Lesion Independent Variability</label>
+      <description><![CDATA[Choose the lesion independent variability level that represents how distinct is each non-connected lesion regarding the voxel intensity gray level. This measure simulates the independent progression for each lesion, where a higher value indicates higher variability among lesions. The parameter is modulated by the normal standard deviation depending of the image type inserted.]]></description>
+      <default>1</default>
+      <constraints>
+        <minimum>0.05</minimum>
+        <maximum>3</maximum>
+        <step>0.01</step>
+      </constraints>
+    </double>
+    <double>
       <name>sigma</name>
       <longflag>--sigma</longflag>
       <label>Lesion Border Smooth Factor</label>
