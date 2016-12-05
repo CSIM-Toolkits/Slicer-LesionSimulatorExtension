@@ -210,7 +210,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     # Lesion Load value
     #
     self.lesionLoadSliderWidget = ctk.ctkSliderWidget()
-    self.lesionLoadSliderWidget.singleStep = 0.1
+    self.lesionLoadSliderWidget.singleStep = 1
     self.lesionLoadSliderWidget.minimum = 5
     self.lesionLoadSliderWidget.maximum = 50
     self.lesionLoadSliderWidget.value = 10
@@ -603,7 +603,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     #                                                 Label Smoothing                                               #
     #################################################################################################################
     regParams = {}
-    regParams["labelToSmooth"] = 3
+    regParams["labelToSmooth"] = 1
     regParams["gaussianSigma"] = 0.2
     regParams["inputVolume"] = outputWMMask.GetID()
     regParams["outputVolume"] = outputWMMask.GetID()
@@ -611,8 +611,8 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     slicer.cli.run(slicer.modules.labelmapsmoothing, None, regParams, wait_for_completion=True)
 
     # slicer.mrmlScene.RemoveNode(T1brain)
-    slicer.mrmlScene.RemoveNode(inputSmoothVolume)
-    slicer.mrmlScene.RemoveNode(inputSmoothBiasVolume)
+    # slicer.mrmlScene.RemoveNode(inputSmoothVolume)
+    # slicer.mrmlScene.RemoveNode(inputSmoothBiasVolume)
 
   def conformInputSpace(self, fixedNode, movingNode, resultNode, transform):
     regParams = {}
