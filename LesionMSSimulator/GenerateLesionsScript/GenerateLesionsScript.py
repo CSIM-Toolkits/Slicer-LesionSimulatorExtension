@@ -187,6 +187,16 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
                                       self.setReturnOriginalSpaceBooleanWidget)
 
     #
+    # Is brain extracted?
+    #
+    self.setIsBETBooleanWidget = ctk.ctkCheckBox()
+    self.setIsBETBooleanWidget.setChecked(False)
+    self.setIsBETBooleanWidget.setToolTip(
+      "Is the input data already brain extracted? This information is only used for MNI152 template, where it helps to the registration process.")
+    parametersInputFormLayout.addRow("Is brain extraced?",
+                                      self.setIsBETBooleanWidget)
+
+    #
     # MS Lesion Simulation Parameters Area
     #
     parametersMSLesionSimulationCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -200,7 +210,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     # Lesion Load value
     #
     self.lesionLoadSliderWidget = ctk.ctkSliderWidget()
-    self.lesionLoadSliderWidget.singleStep = 1
+    self.lesionLoadSliderWidget.singleStep = 0.1
     self.lesionLoadSliderWidget.minimum = 5
     self.lesionLoadSliderWidget.maximum = 50
     self.lesionLoadSliderWidget.value = 10
@@ -230,6 +240,20 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     parametersMSLesionSimulationFormLayout.addRow("Lesion Homogeneity ", self.setLesionHomogeneityWidget)
 
     #
+    # Lesion Independent Variability
+    #
+    self.setLesionVariabilityWidget = qt.QDoubleSpinBox()
+    self.setLesionVariabilityWidget.setMaximum(3)
+    self.setLesionVariabilityWidget.setMinimum(0.1)
+    self.setLesionVariabilityWidget.setSingleStep(0.01)
+    self.setLesionVariabilityWidget.setValue(1.0)
+    self.setLesionVariabilityWidget.setToolTip("Choose the lesion independent variability level that represents how distinct is each non-connected "
+                                         "lesion regarding the voxel intensity gray level. This measure simulates the independent progression "
+                                         "for each lesion, where a higher value indicates higher variability among lesions. The parameter is "
+                                         "modulated by the normal standard deviation depending of the image type inserted.")
+    parametersMSLesionSimulationFormLayout.addRow("Lesion Variability ", self.setLesionVariabilityWidget)
+
+    #
     # Apply Button
     #
     self.applyButton = qt.QPushButton("Apply")
@@ -257,9 +281,11 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
   def onApplyButton(self):
     logic = GenerateLesionsScriptLogic()
     returnSpace = self.setReturnOriginalSpaceBooleanWidget.isChecked()
+    isBET = self.setIsBETBooleanWidget.isChecked()
     lesionLoad = self.lesionLoadSliderWidget.value
     sigma = self.setLesionSigmaWidget.value
     homogeneity = self.setLesionHomogeneityWidget.value
+    variability = self.setLesionVariabilityWidget.value
     logic.run(self.inputT1Selector.currentNode()
               , self.inputFLAIRSelector.currentNode()
               , self.inputT2Selector.currentNode()
@@ -268,9 +294,11 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
               , self.inputADCSelector.currentNode()
               , self.outputLesionLabelSelector.currentNode()
               , returnSpace
+              , isBET
               , lesionLoad
               , sigma
-              , homogeneity)
+              , homogeneity
+              , variability)
 
 #
 # GenerateLesionsScriptLogic
@@ -300,7 +328,9 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     return True
 
 
-  def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume, inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace,lesionLoad, sigma, homogeneity):
+  def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
+          inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace, isBET,
+          lesionLoad, sigma, homogeneity, variability):
     """
     Run the actual algorithm
     """
@@ -357,7 +387,8 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     # userHome = expanduser("~")
     # databasePath = userHome+"/MSlesion_database"
 
-    slicer.util.showStatusMessage("Step 1/...: Reading brain templates...")
+    slicer.util.showStatusMessage("Step 1/5: Reading brain templates...")
+    logging.info("Step 1/5: Reading brain templates...")
     if platform.system() is "Windows":
       home = expanduser("%userprofile%")
       databasePath = home + "\\MSlesion_database"
@@ -365,16 +396,35 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
       home = expanduser("~")
       databasePath = home + "/MSlesion_database"
 
+
     #
-    # First Step: Registration between Input Image and MNI Image Space
+    # Subject's White Matter mask estimative
     #
-    slicer.util.showStatusMessage("Step 2/...: MNI152 template to native space...")
-    if platform.system() is "Windows":
-      slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm.nii.gz")
+    slicer.util.showStatusMessage("Step 2/5: White matter estimative from subjects T1 image...")
+    logging.info("Step 2/5: White matter estimative from subjects T1 image...")
+    WMMask = slicer.vtkMRMLLabelMapVolumeNode()
+    slicer.mrmlScene.AddNode(WMMask)
+    self.doWhiteMatterMask(inputT1Volume,WMMask)
+
+    #
+    # Registration between Input Image and MNI Image Space
+    #
+    slicer.util.showStatusMessage("Step 3/5: MNI152 template to native space...")
+    logging.info("Step 3/5: MNI152 template to native space...")
+    if isBET:
+      if platform.system() is "Windows":
+        slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz")
+      else:
+        slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm_brain.nii.gz")
+      MNINodeName = "MNI152_T1_1mm_brain"
+      MNINode = slicer.util.getNode(MNINodeName)
     else:
-      slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz")
-    MNINodeName = "MNI152_T1_1mm"
-    MNINode = slicer.util.getNode(MNINodeName)
+      if platform.system() is "Windows":
+        slicer.util.loadVolume(databasePath + "\\MNI152_T1_1mm.nii.gz")
+      else:
+        slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz")
+      MNINodeName = "MNI152_T1_1mm"
+      MNINode = slicer.util.getNode(MNINodeName)
 
     MNI_t1 = slicer.vtkMRMLScalarVolumeNode()
     slicer.mrmlScene.AddNode(MNI_t1)
@@ -383,11 +433,11 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     self.doNonLinearRegistration(inputT1Volume, MNINode, MNI_t1, regMNItoT1Transform)
 
-
     #
-    # Second Step: Find lesion mask using Probability Image, lesion labels and desired Lesion Load
+    # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
     #
-    slicer.util.showStatusMessage("Step 3/...: Simulating MS lesion map...")
+    slicer.util.showStatusMessage("Step 4/5: Simulating MS lesion map...")
+    logging.info("Step 4/5: Simulating MS lesion map...")
     if outputLesionLabel != None:
       lesionMap = outputLesionLabel
     else:
@@ -410,27 +460,36 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     # Transforming lesion map to native space
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
 
+    # Removing wrong lesion location based on WM mask
+    self.cutWrongLesions(lesionMap, WMMask,lesionMap)
+
     #
-    # Third Step: Generate lesions in each input image
+    # Generating lesions in each input image
     #
-    slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on T1 volume...")
-    self.doSimulateLesions(inputT1Volume, "T1", lesionMap, inputT1Volume, sigma, homogeneity)
+    slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T1 volume...")
+    logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
+    self.doSimulateLesions(inputT1Volume, "T1", lesionMap, inputT1Volume, sigma, homogeneity, variability)
 
     if inputFLAIRVolume != None:
-      slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on T2-FLAIR volume...")
-      self.doSimulateLesions(FLAIR_t1, "T2-FLAIR", lesionMap, inputFLAIRVolume, sigma, homogeneity)
+      slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
+      logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
+      self.doSimulateLesions(FLAIR_t1, "T2-FLAIR", lesionMap, inputFLAIRVolume, sigma, homogeneity, variability)
     if inputT2Volume != None:
-      slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on T2 volume...")
-      self.doSimulateLesions(T2_t1, "T2", lesionMap, inputT2Volume, sigma, homogeneity)
+      slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T2 volume...")
+      logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
+      self.doSimulateLesions(T2_t1, "T2", lesionMap, inputT2Volume, sigma, homogeneity, variability)
     if inputPDVolume != None:
-      slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on PD volume...")
-      self.doSimulateLesions(PD_t1, "PD", lesionMap, inputPDVolume, sigma, homogeneity)
+      slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on PD volume...")
+      logging.info("Step 5/5: Applying lesion deformation on PD volume...")
+      self.doSimulateLesions(PD_t1, "PD", lesionMap, inputPDVolume, sigma, homogeneity, variability)
     if inputFAVolume != None:
-      slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on DTI-FA map...")
-      self.doSimulateLesions(FA_t1, "DTI-FA", lesionMap, inputFAVolume, sigma, homogeneity)
+      slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on DTI-FA map...")
+      logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
+      self.doSimulateLesions(FA_t1, "DTI-FA", lesionMap, inputFAVolume, sigma, homogeneity, variability)
     if inputADCVolume != None:
-      slicer.util.showStatusMessage("Step 4/...: Applying lesion deformation on DTI-ADC map...")
-      self.doSimulateLesions(ADC_t1, "DTI-ADC", lesionMap, inputADCVolume, sigma, homogeneity)
+      slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on DTI-ADC map...")
+      logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
+      self.doSimulateLesions(ADC_t1, "DTI-ADC", lesionMap, inputADCVolume, sigma, homogeneity, variability)
 
     #
     # Return inputs to its original space
@@ -438,22 +497,27 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     if returnSpace:
       if inputT2Volume != None:
         slicer.util.showStatusMessage("post-processing: Returning T2 image space...")
+        logging.info("post-processing: Returning T2 image space...")
         # T2 inverse transform
         self.applyRegistrationTransform(T2_t1,inputT2Volume,inputT2Volume,regT2toT1Transform,True,False)
       if inputFLAIRVolume != None:
         slicer.util.showStatusMessage("post-processing: Returning T2-FLAIR image space...")
+        logging.info("post-processing: Returning T2-FLAIR image space...")
         # T2-FLAIR inverse transform
         self.applyRegistrationTransform(FLAIR_t1,inputFLAIRVolume,inputFLAIRVolume,regFLAIRtoT1Transform,True,False)
       if inputPDVolume != None:
         slicer.util.showStatusMessage("post-processing: Returning PD image space...")
+        logging.info("post-processing: Returning PD image space...")
         # PD inverse transform
         self.applyRegistrationTransform(PD_t1, inputPDVolume, inputPDVolume, regPDtoT1Transform, True, False)
       if inputFAVolume != None:
         slicer.util.showStatusMessage("post-processing: Returning DTI-FA map space...")
+        logging.info("post-processing: Returning DTI-FA image space...")
         # DTI-FA inverse transform
         self.applyRegistrationTransform(FA_t1, inputFAVolume, inputFAVolume, regFAtoT1Transform, True, False)
       if inputADCVolume != None:
         slicer.util.showStatusMessage("post-processing: Returning DTI-ADC map space...")
+        logging.info("post-processing: Returning DTI-ADC image space...")
         # DTI-ADC inverse transform
         self.applyRegistrationTransform(ADC_t1, inputADCVolume, inputADCVolume, regADCtoT1Transform, True, False)
 
@@ -463,6 +527,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
     slicer.mrmlScene.RemoveNode(probabilityNode)
     slicer.mrmlScene.RemoveNode(MNINode)
+    slicer.mrmlScene.RemoveNode(WMMask)
 
     if outputLesionLabel == None:
       slicer.mrmlScene.RemoveNode(lesionMap)
@@ -487,6 +552,67 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     logging.info('Processing completed')
 
     return True
+
+  def doWhiteMatterMask(self, T1Volume, outputWMMask):
+    # T1brain = slicer.vtkMRMLScalarVolumeNode()
+    # slicer.mrmlScene.AddNode(T1brain)
+    # betParams = {}
+    # betParams["inputVolume"] = T1Volume.GetID()
+    # betParams["outputVolume"] = T1brain.GetID()
+    #
+    # slicer.cli.run(slicer.modules.robexbrainextraction, None, betParams, wait_for_completion=True)
+
+    #################################################################################################################
+    #                                              Noise Attenuation                                                #
+    #################################################################################################################
+    inputSmoothVolume = slicer.vtkMRMLScalarVolumeNode()
+    slicer.mrmlScene.AddNode(inputSmoothVolume)
+    regParams = {}
+    regParams["inputVolume"] = T1Volume.GetID()
+    regParams["outputVolume"] = inputSmoothVolume.GetID()
+    regParams["condutance"] = 10
+    regParams["iterations"] = 5
+    regParams["q"] = 1.2
+
+    slicer.cli.run(slicer.modules.aadimagefilter, None, regParams, wait_for_completion=True)
+
+    #################################################################################################################
+    #                                             Bias Field Correction                                             #
+    #################################################################################################################
+    inputSmoothBiasVolume = slicer.vtkMRMLScalarVolumeNode()
+    slicer.mrmlScene.AddNode(inputSmoothBiasVolume)
+    regParams = {}
+    regParams["inputImageName"] = inputSmoothVolume.GetID()
+    regParams["outputImageName"] = inputSmoothBiasVolume.GetID()
+
+    slicer.cli.run(slicer.modules.n4itkbiasfieldcorrection, None, regParams, wait_for_completion=True)
+
+    #################################################################################################################
+    #                                             Brain Tissue Segmentation                                         #
+    #################################################################################################################
+    regParams = {}
+    regParams["inputVolume"] = inputSmoothBiasVolume.GetID()
+    regParams["outputLabel"] = outputWMMask.GetID()
+    regParams["imageModality"] = "T1"
+    regParams["oneTissue"] = True
+    regParams["typeTissue"] = "White Matter"
+
+    slicer.cli.run(slicer.modules.basicbraintissues, None, regParams, wait_for_completion=True)
+
+    #################################################################################################################
+    #                                                 Label Smoothing                                               #
+    #################################################################################################################
+    regParams = {}
+    regParams["labelToSmooth"] = 3
+    regParams["gaussianSigma"] = 0.2
+    regParams["inputVolume"] = outputWMMask.GetID()
+    regParams["outputVolume"] = outputWMMask.GetID()
+
+    slicer.cli.run(slicer.modules.labelmapsmoothing, None, regParams, wait_for_completion=True)
+
+    # slicer.mrmlScene.RemoveNode(T1brain)
+    slicer.mrmlScene.RemoveNode(inputSmoothVolume)
+    slicer.mrmlScene.RemoveNode(inputSmoothBiasVolume)
 
   def conformInputSpace(self, fixedNode, movingNode, resultNode, transform):
     regParams = {}
@@ -538,7 +664,23 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
                  'databasePath': databasePath}
     return( slicer.cli.run(slicer.modules.generatemask, None, cliParams, wait_for_completion=True) )
 
-  def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, homogeneity):
+  def cutWrongLesions(self,input1, input2, output):
+    """
+    Execute the Multiply Scalar Images CLI
+    :param inputVolume1:
+    :param inputVolume2:
+    :param outputVolume:
+    :param order:
+    :return:
+    """
+    regParams = {}
+    regParams["inputVolume1"] = input1.GetID()
+    regParams["inputVolume2"] = input2.GetID()
+    regParams["outputVolume"] = output.GetID()
+
+    slicer.cli.run(slicer.modules.multiplyscalarvolumes, None, regParams, wait_for_completion=True)
+
+  def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, homogeneity, variability):
     """
     Execute the DeformImage CLI
     :param inputVolume:
@@ -547,6 +689,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     :param outputVolume:
     :param sigma:
     :param homogeneity:
+    :param variability:
     :return:
     """
     params = {}
@@ -556,6 +699,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     params["outputVolume"] = outputVolume.GetID()
     params["sigma"] = sigma
     params["homogeneity"] = homogeneity
+    params["variability"] = variability
 
     slicer.cli.run(slicer.modules.deformimage, None, params, wait_for_completion=True)
 
