@@ -17,7 +17,6 @@
 #include "itkImageFileWriter.h"
 
 #include "itkCastImageFilter.h"
-#include "itkImageDuplicator.h"
 #include "itkGaussianDistribution.h"
 #include "itkImageRegionIterator.h"
 #include "itkMaskNegatedImageFilter.h"
@@ -64,8 +63,6 @@ int DoIt( int argc, char * argv[], T )
 
     typedef itk::CastImageFilter<InputImageType, CastImageType>    CastInputType;
     typedef itk::CastImageFilter<CastImageType, OutputImageType>   CastOutputType;
-
-    typedef itk::ImageDuplicator< CastImageType >                                       DuplicatorType;
 
     typedef itk::MaskImageFilter<CastImageType, LabelInputType>                         MaskType;
     typedef itk::MaskNegatedImageFilter<CastImageType, LabelInputType>                  MaskNegateType;
@@ -124,12 +121,10 @@ int DoIt( int argc, char * argv[], T )
     normalGenerator->Initialize(rand());
 
     //Creating deformation map
-    typename DuplicatorType::Pointer duplicator = DuplicatorType::New();
-    duplicator->SetInputImage(castInput->GetOutput());
-    duplicator->Update();
-
     typename CastImageType::Pointer deformationMap = CastImageType::New();
-    deformationMap = duplicator->GetOutput();
+    deformationMap->CopyInformation(reader->GetOutput());
+    deformationMap->SetRegions(reader->GetOutput()->GetBufferedRegion());
+    deformationMap->Allocate();
 
     ImageIterator defMapIt(deformationMap, deformationMap->GetBufferedRegion());
     defMapIt.GoToBegin();
