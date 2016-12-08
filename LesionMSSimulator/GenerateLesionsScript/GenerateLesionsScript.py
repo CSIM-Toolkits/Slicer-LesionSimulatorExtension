@@ -437,7 +437,8 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
-    self.doFilterMask(inputT1Volume, lesionMap, lesionMap)
+    cutFactor = 1.5
+    self.doFilterMask(inputT1Volume, lesionMap, lesionMap, cutFactor)
 
     #
     # Generating lesions in each input image
@@ -576,7 +577,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
                  'databasePath': databasePath}
     return( slicer.cli.run(slicer.modules.generatemask, None, cliParams, wait_for_completion=True) )
 
-  def doFilterMask(self, inputVolume, inputMask, resultMask):
+  def doFilterMask(self, inputVolume, inputMask, resultMask, cutFactor):
     """
     Execute the FilterMask CLI
     :param inputVolume:
@@ -584,7 +585,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     :param resultMask:
     :return:
     """
-    cliParams = {'inputVolume': inputVolume, 'inputMask': inputMask, 'outputVolume': resultMask}
+    cliParams = {'inputVolume': inputVolume, 'inputMask': inputMask, 'outputVolume': resultMask, 'cutFactor': cutFactor}
     return( slicer.cli.run(slicer.modules.filtermask, None, cliParams, wait_for_completion=True) )
 
   def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, homogeneity, variability):

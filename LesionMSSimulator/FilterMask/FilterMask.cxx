@@ -78,8 +78,8 @@ int DoIt( int argc, char * argv[], T )
     LabelIteratorType newIt(maskImage, maskImage->GetRequestedRegion());
 
     lblIt.GoToBegin();
-    float minLimit = mean - 1.5*stdev;
-    float maxLimit = mean + 1.5*stdev;
+    float minLimit = mean - cutFactor*stdev;
+    float maxLimit = mean + cutFactor*stdev;
 
 
     while(!lblIt.IsAtEnd()){
