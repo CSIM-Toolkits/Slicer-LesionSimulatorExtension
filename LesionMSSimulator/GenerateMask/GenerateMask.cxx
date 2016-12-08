@@ -138,16 +138,18 @@ int DoIt( int argc, char * argv[], T )
             //Checks if lesion is going to overlap another already selected lesion
             bool wontOverlap = true;
 
-            labelIt.GoToBegin();
-            while(!labelIt.IsAtEnd()){
-                if(labelIt.Get()>0){
-                    maskIt.SetIndex(labelIt.GetIndex());
-                    if(maskIt.Get()>0 && size<4){
-                        wontOverlap = false;
-                        break;
+            if(size<4){
+                labelIt.GoToBegin();
+                while(!labelIt.IsAtEnd()){
+                    if(labelIt.Get()>0){
+                        maskIt.SetIndex(labelIt.GetIndex());
+                        if(maskIt.Get()>0){
+                            wontOverlap = false;
+                            break;
+                        }
                     }
+                    ++labelIt;
                 }
-                ++labelIt;
             }
 
             if(wontOverlap && satisfyLesionLoad){
@@ -169,6 +171,10 @@ int DoIt( int argc, char * argv[], T )
 
         }
     }
+    statistics->SetInput(maskImage);
+    statistics->Update();
+
+    std::cout<<"Final volume = "<< statistics->GetSum() << std::endl;
 
     typename WriterType::Pointer writer = WriterType::New();
 
