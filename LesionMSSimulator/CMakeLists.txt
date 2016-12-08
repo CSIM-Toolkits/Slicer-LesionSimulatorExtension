@@ -21,6 +21,7 @@ include(${Slicer_USE_FILE})
 add_subdirectory(GenerateLesionsScript)
 add_subdirectory(GenerateMask)
 add_subdirectory(DeformImage)
+add_subdirectory(FilterMask)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

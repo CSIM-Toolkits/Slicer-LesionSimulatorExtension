@@ -436,6 +436,9 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     # Transforming lesion map to native space
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
 
+    # Filtering lesion map to minimize or exclude regions outside of WM
+    self.doFilterMask(inputT1Volume, lesionMap, lesionMap)
+
     #
     # Generating lesions in each input image
     #
@@ -496,10 +499,10 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
 
     # # Removing unnecessary nodes
-    slicer.mrmlScene.RemoveNode(MNI_t1)
-    slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
-    slicer.mrmlScene.RemoveNode(probabilityNode)
-    slicer.mrmlScene.RemoveNode(MNINode)
+    # slicer.mrmlScene.RemoveNode(MNI_t1)
+    # slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
+    # slicer.mrmlScene.RemoveNode(probabilityNode)
+    # slicer.mrmlScene.RemoveNode(MNINode)
 
     if inputFLAIRVolume != None:
       slicer.mrmlScene.RemoveNode(regT2toT1Transform)
@@ -573,6 +576,16 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
                  'databasePath': databasePath}
     return( slicer.cli.run(slicer.modules.generatemask, None, cliParams, wait_for_completion=True) )
 
+  def doFilterMask(self, inputVolume, inputMask, resultMask):
+    """
+    Execute the FilterMask CLI
+    :param inputVolume:
+    :param inputMask:
+    :param resultMask:
+    :return:
+    """
+    cliParams = {'inputVolume': inputVolume, 'inputMask': inputMask, 'outputVolume': resultMask}
+    return( slicer.cli.run(slicer.modules.filtermask, None, cliParams, wait_for_completion=True) )
 
   def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, homogeneity, variability):
     """
