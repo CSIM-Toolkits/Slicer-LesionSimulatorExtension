@@ -653,7 +653,6 @@ MSlesion_database\\labels-database\\5000-more\\24.nii.gz
 
 MSlesion_database\\MNI152_T1_1mm.nii.gz
 MSlesion_database\\MNI152_T1_1mm_brain.nii.gz
-MSlesion_database\\USP-ICBM-MSpriors-46-1mm.nii.gz
     )
     endif (WIN32)
     if (UNIX)
@@ -1287,7 +1286,6 @@ MSlesion_database/labels-database/5000-more/24.nii.gz
 
 MSlesion_database/MNI152_T1_1mm.nii.gz
 MSlesion_database/MNI152_T1_1mm_brain.nii.gz
-MSlesion_database/USP-ICBM-MSpriors-46-1mm.nii.gz
     )
     endif (UNIX)
 
@@ -1952,8 +1950,7 @@ if (WIN32)
 "%userprofile%\\MSlesion_database\\labels-database\\5000-more\\24.nii.gz" 
 
 "%userprofile%\\MSlesion_database\\MNI152_T1_1mm.nii.gz"
-"%userprofile%\\MSlesion_database\\MNI152_T1_1mm_brain.nii.gz"
-"%userprofile%\\MSlesion_database\\USP-ICBM-MSpriors-46-1mm.nii.gz"  
+"%userprofile%\\MSlesion_database\\MNI152_T1_1mm_brain.nii.gz" 
     )
 endif (WIN32)
 if (UNIX)
@@ -2587,7 +2584,6 @@ if (UNIX)
 
 "~/MSlesion_database/MNI152_T1_1mm.nii.gz"
 "~/MSlesion_database/MNI152_T1_1mm_brain.nii.gz"
-"~/MSlesion_database/USP-ICBM-MSpriors-46-1mm.nii.gz"
     )
 endif (UNIX)
 

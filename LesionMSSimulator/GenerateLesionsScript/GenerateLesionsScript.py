@@ -254,6 +254,61 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     parametersMSLesionSimulationFormLayout.addRow("Lesion Variability ", self.setLesionVariabilityWidget)
 
     #
+    # Gray Matter Threshold
+    #
+    self.setGMThresholdWidget = qt.QDoubleSpinBox()
+    self.setGMThresholdWidget.setMaximum(5)
+    self.setGMThresholdWidget.setMinimum(0.1)
+    self.setGMThresholdWidget.setSingleStep(0.01)
+    self.setGMThresholdWidget.setValue(1.5)
+    self.setGMThresholdWidget.setToolTip("Set the Gray Matter threshold used to refine the simulated lesion map. The simulation supose that the MS lesions"
+                                         "belongs only in the White Matter space. This variable is related to the voxel intensity and the Gray Matter probability"
+                                         "distribution (standard deviation).")
+    parametersMSLesionSimulationFormLayout.addRow("Gray Matter Threshold ", self.setGMThresholdWidget)
+
+    #
+    # Advanced Parameters Area
+    #
+    parametersAvancedParametersCollapsibleButton = ctk.ctkCollapsibleButton()
+    parametersAvancedParametersCollapsibleButton.text = "Advanced Parameters"
+    self.layout.addWidget(parametersAvancedParametersCollapsibleButton)
+
+    # Layout within the dummy collapsible button
+    parametersAdvancedParametersFormLayout = qt.QFormLayout(parametersAvancedParametersCollapsibleButton)
+
+    #
+    # Percentage Sampling Area
+    #
+    self.setPercSamplingQWidget = qt.QDoubleSpinBox()
+    self.setPercSamplingQWidget.setDecimals(4)
+    self.setPercSamplingQWidget.setMaximum(1)
+    self.setPercSamplingQWidget.setMinimum(0.0001)
+    self.setPercSamplingQWidget.setSingleStep(0.001)
+    self.setPercSamplingQWidget.setValue(0.002)
+    self.setPercSamplingQWidget.setToolTip("Percentage of voxel used in registration.")
+    parametersAdvancedParametersFormLayout.addRow("Percentage Of Samples ", self.setPercSamplingQWidget)
+
+    #
+    # BSpline Grid
+    #
+    self.setBSplineGridWidget = qt.QLineEdit()
+    self.setBSplineGridWidget.setText('3,3,3')
+    self.setBSplineGridWidget.setToolTip("Set the BSpline grid for non linear structural adjustments.")
+    parametersAdvancedParametersFormLayout.addRow("BSpline Grid ", self.setBSplineGridWidget)
+
+    #
+    # Initiation Method Area
+    #
+    self.setInitiationRegistrationBooleanWidget = ctk.ctkComboBox()
+    self.setInitiationRegistrationBooleanWidget.addItem("useMomentsAlign")
+    self.setInitiationRegistrationBooleanWidget.addItem("Off")
+    self.setInitiationRegistrationBooleanWidget.addItem("useCenterOfHeadAlign")
+    self.setInitiationRegistrationBooleanWidget.addItem("useGeometryAlign")
+    self.setInitiationRegistrationBooleanWidget.setToolTip(
+      "Initialization method used for the MNI152 registration.")
+    parametersAdvancedParametersFormLayout.addRow("Initiation Method ", self.setInitiationRegistrationBooleanWidget)
+
+    #
     # Apply Button
     #
     self.applyButton = qt.QPushButton("Apply")
@@ -286,6 +341,10 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     sigma = self.setLesionSigmaWidget.value
     homogeneity = self.setLesionHomogeneityWidget.value
     variability = self.setLesionVariabilityWidget.value
+    cutFraction = self.setGMThresholdWidget.value
+    samplingPerc = self.setPercSamplingQWidget.value
+    grid = self.setBSplineGridWidget.text
+    initiationMethod = self.setInitiationRegistrationBooleanWidget.currentText
     logic.run(self.inputT1Selector.currentNode()
               , self.inputFLAIRSelector.currentNode()
               , self.inputT2Selector.currentNode()
@@ -298,7 +357,11 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
               , lesionLoad
               , sigma
               , homogeneity
-              , variability)
+              , variability
+              , cutFraction
+              , samplingPerc
+              , grid
+              , initiationMethod)
 
 #
 # GenerateLesionsScriptLogic
@@ -330,7 +393,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
           inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace, isBET,
-          lesionLoad, sigma, homogeneity, variability):
+          lesionLoad, sigma, homogeneity, variability, cutFraction, samplingPerc, grid, initiationMethod):
     """
     Run the actual algorithm
     """
@@ -399,12 +462,12 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     logging.info("Step 3/5: MNI152 template to native space...")
     if isBET:
       if platform.system() is "Windows":
-        slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz")
+        (readSuccess, MNINode)=slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz",{},True)
       else:
         (readSuccess,MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm_brain.nii.gz",{},True)
     else:
       if platform.system() is "Windows":
-        slicer.util.loadVolume(databasePath + "\\MNI152_T1_1mm.nii.gz")
+        (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "\\MNI152_T1_1mm.nii.gz",{},True)
       else:
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz",{},True)
 
@@ -413,7 +476,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     regMNItoT1Transform = slicer.vtkMRMLBSplineTransformNode()
     slicer.mrmlScene.AddNode(regMNItoT1Transform)
 
-    self.doNonLinearRegistration(inputT1Volume, MNINode, MNI_t1, regMNItoT1Transform)
+    self.doNonLinearRegistration(inputT1Volume, MNINode, MNI_t1, regMNItoT1Transform, samplingPerc, grid, initiationMethod)
 
     #
     # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
@@ -423,22 +486,16 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     lesionMap = outputLesionLabel
     if platform.system() is "Windows":
-      (readSuccess, probabilityNode)=slicer.util.loadVolume(databasePath + "\\USP-ICBM-MSpriors-46-1mm.nii.gz")
+      self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
-      (readSuccess, probabilityNode)=slicer.util.loadVolume(databasePath+"/USP-ICBM-MSpriors-46-1mm.nii.gz",{},True)
-
-    if platform.system() is "Windows":
-      self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath+"\\labels-database")
-    else:
-      self.doGenerateMask(probabilityNode, lesionLoad, lesionMap, databasePath + "/labels-database")
+      self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath + "/labels-database")
 
 
     # Transforming lesion map to native space
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
-    cutFactor = 1.5
-    self.doFilterMask(inputT1Volume, lesionMap, lesionMap, cutFactor)
+    self.doFilterMask(inputT1Volume, lesionMap, lesionMap, cutFraction)
 
     #
     # Generating lesions in each input image
@@ -500,10 +557,9 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
 
     # # Removing unnecessary nodes
-    # slicer.mrmlScene.RemoveNode(MNI_t1)
-    # slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
-    # slicer.mrmlScene.RemoveNode(probabilityNode)
-    # slicer.mrmlScene.RemoveNode(MNINode)
+    slicer.mrmlScene.RemoveNode(MNI_t1)
+    slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
+    slicer.mrmlScene.RemoveNode(MNINode)
 
     if inputFLAIRVolume != None:
       slicer.mrmlScene.RemoveNode(regT2toT1Transform)
@@ -540,7 +596,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
 
     slicer.cli.run(slicer.modules.brainsfit, None, regParams, wait_for_completion=True)
 
-  def doNonLinearRegistration(self, fixedNode, movingNode, resultNode, transform):
+  def doNonLinearRegistration(self, fixedNode, movingNode, resultNode, transform, samplePerc, grid, initiationMethod):
     """
     Execute the BrainsFit registration
     :param fixedNode:
@@ -551,12 +607,12 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     regParams = {}
     regParams["fixedVolume"] = fixedNode.GetID()
     regParams["movingVolume"] = movingNode.GetID()
-    regParams["samplingPercentage"] = 0.002
-    regParams["splineGridSize"] = '3,3,3' # Coloquei um valor baixo para testar...
+    regParams["samplingPercentage"] = samplePerc
+    regParams["splineGridSize"] = grid
     regParams["outputVolume"] = resultNode.GetID()
     # regParams["linearTransform"] = transform.GetID()
     regParams["bsplineTransform"] = transform.GetID()
-    regParams["initializeTransformMode"] = "useMomentsAlign"
+    regParams["initializeTransformMode"] = initiationMethod
     # regParams["histogramMatch"] = True
     regParams["useRigid"] = True
     regParams["useAffine"] = True
