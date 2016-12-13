@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>MS Simulator</category>
-  <title>DeformImage</title>
+  <category>Supporting Modules</category>
+  <title>Deform Image</title>
   <description><![CDATA[Generates MS artificial lesions by deforming Input Image on regions defined by Input Mask]]></description>
   <version>0.0.1</version>
   <documentation-url>http://www.example.com/Slicer/Modules/DeformImage</documentation-url>

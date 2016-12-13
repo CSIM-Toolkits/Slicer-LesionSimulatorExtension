@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>MS Simulator</category>
-  <title>GenerateMask</title>
+  <category>Supporting Modules</category>
+  <title>Generate Mask</title>
   <description><![CDATA[Use parameters passed by python main script to generate mask for MS artificial lesions.]]></description>
   <version>0.1.0.$Revision$(alpha)</version>
   <documentation-url>http://slicer.org/slicerWiki/index.php/Documentation/4.3/Modules/Add</documentation-url>

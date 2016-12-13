@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>MS Simulator</category>
-  <title>FilterMask</title>
+  <category>Supporting Modules</category>
+  <title>Filter Mask</title>
   <description><![CDATA[Checks if there are voxels inside the lesion mask that does not belong to White Matter tissue.]]></description>
   <version>0.0.1</version>
   <documentation-url>http://www.example.com/Slicer/Modules/FilterMask</documentation-url>

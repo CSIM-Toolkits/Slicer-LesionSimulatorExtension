@@ -23,23 +23,22 @@ from slicer.ScriptedLoadableModule import *
 import logging
 
 #
-# GenerateLesionsScript
+# MSLesionSimulator
 #
 
-class GenerateLesionsScript(ScriptedLoadableModule):
+class MSLesionSimulator(ScriptedLoadableModule):
   """Uses ScriptedLoadableModule base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "Generate Lesions Script"
-    self.parent.categories = ["MS Simulator"]
+    self.parent.title = "MS Lesion Simulator"
+    self.parent.categories = ["Simulation"]
     self.parent.dependencies = []
     self.parent.contributors = ["Antonio Carlos da Silva Senra Filho (University of Sao Paulo), Fabricio Henrique Simozo (University of Sao Paulo)"]
     self.parent.helpText = """
-    This scripted module is the main module for lesion simulation toolkit developed by the CSIM laboratory. Each subsection is specific for
-    a certain lesion simulation pipeline. At moment, only Multiple Sclerosis lesions are available. More details, please visit the wikipage:
+    This scripted module is the main module for Multiple Sclerosis lesion simulation toolkit developed by the CSIM laboratory. More details, please visit the wikipage:
     https://www.slicer.org/wiki/Documentation/Nightly/Extensions/LesionSimulator
     """
     self.parent.acknowledgementText = """
@@ -47,10 +46,10 @@ class GenerateLesionsScript(ScriptedLoadableModule):
 """ # replace with organization, grant and thanks.
 
 #
-# GenerateLesionsScriptWidget
+# MSLesionSimulatorWidget
 #
 
-class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
+class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
   """Uses ScriptedLoadableModuleWidget base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
@@ -334,7 +333,7 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
     self.applyButton.enabled = self.inputT1Selector.currentNode() and self.outputLesionLabelSelector.currentNode()
 
   def onApplyButton(self):
-    logic = GenerateLesionsScriptLogic()
+    logic = MSLesionSimulatorLogic()
     returnSpace = self.setReturnOriginalSpaceBooleanWidget.isChecked()
     isBET = self.setIsBETBooleanWidget.isChecked()
     lesionLoad = self.lesionLoadSliderWidget.value
@@ -364,10 +363,10 @@ class GenerateLesionsScriptWidget(ScriptedLoadableModuleWidget):
               , initiationMethod)
 
 #
-# GenerateLesionsScriptLogic
+# MSLesionSimulatorLogic
 #
 
-class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
+class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
   """This class should implement all the actual
   computation done by your module.  The interface
   should be such that other python code can import
@@ -695,7 +694,7 @@ class GenerateLesionsScriptLogic(ScriptedLoadableModuleLogic):
     slicer.cli.run(slicer.modules.brainsresample, None, params, wait_for_completion=True)
 
 
-class GenerateLesionsScriptTest(ScriptedLoadableModuleTest):
+class MSLesionSimulatorTest(ScriptedLoadableModuleTest):
   """
   This is the test case for your scripted module.
   Uses ScriptedLoadableModuleTest base class, available at:
@@ -711,9 +710,9 @@ class GenerateLesionsScriptTest(ScriptedLoadableModuleTest):
     """Run as few or as many tests as needed here.
     """
     self.setUp()
-    self.test_GenerateLesionsScript1()
+    self.test_MSLesionSimulator1()
 
-  def test_GenerateLesionsScript1(self):
+  def test_MSLesionSimulator1(self):
     """ Ideally you should have several levels of tests.  At the lowest level
     tests should exercise the functionality of the logic with different inputs
     (both valid and invalid).  At higher levels your tests should emulate the
@@ -745,6 +744,6 @@ class GenerateLesionsScriptTest(ScriptedLoadableModuleTest):
     self.delayDisplay('Finished with download and loading')
 
     volumeNode = slicer.util.getNode(pattern="FA")
-    logic = GenerateLesionsScriptLogic()
+    logic = MSLesionSimulatorLogic()
     self.assertTrue( logic.hasImageData(volumeNode) )
     self.delayDisplay('Test passed!')

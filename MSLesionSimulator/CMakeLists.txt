@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-set(MODULE_NAME GenerateLesionsScript)
+set(MODULE_NAME MSLesionSimulator)
 
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
