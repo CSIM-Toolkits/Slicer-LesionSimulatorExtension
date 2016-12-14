@@ -236,7 +236,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.setLesionHomogeneityWidget.setMinimum(0.1)
     self.setLesionHomogeneityWidget.setSingleStep(0.01)
     self.setLesionHomogeneityWidget.setValue(0.5)
-    self.setLesionHomogeneityWidget.setToolTip("Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heteorgenours lesion contrast. This parameter is related to a Gaussian variance given in mm.")
+    self.setLesionHomogeneityWidget.setToolTip("Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heterogenous lesion contrast. This parameter is related to a Gaussian variance given in mm.")
     parametersMSLesionSimulationFormLayout.addRow("Lesion Homogeneity ", self.setLesionHomogeneityWidget)
 
     #
@@ -335,7 +335,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.setPercSamplingQWidget.setMaximum(1)
     self.setPercSamplingQWidget.setMinimum(0.0001)
     self.setPercSamplingQWidget.setSingleStep(0.001)
-    self.setPercSamplingQWidget.setValue(0.002)
+    self.setPercSamplingQWidget.setValue(0.05)
     self.setPercSamplingQWidget.setToolTip("Percentage of voxel used in registration.")
     parametersAdvancedParametersFormLayout.addRow("Percentage Of Samples ", self.setPercSamplingQWidget)
 
@@ -343,7 +343,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     # BSpline Grid
     #
     self.setBSplineGridWidget = qt.QLineEdit()
-    self.setBSplineGridWidget.setText('3,3,3')
+    self.setBSplineGridWidget.setText('5,5,5')
     self.setBSplineGridWidget.setToolTip("Set the BSpline grid for non linear structural adjustments.")
     parametersAdvancedParametersFormLayout.addRow("BSpline Grid ", self.setBSplineGridWidget)
 
@@ -351,9 +351,9 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     # Initiation Method Area
     #
     self.setInitiationRegistrationBooleanWidget = ctk.ctkComboBox()
-    self.setInitiationRegistrationBooleanWidget.addItem("useMomentsAlign")
-    self.setInitiationRegistrationBooleanWidget.addItem("Off")
     self.setInitiationRegistrationBooleanWidget.addItem("useCenterOfHeadAlign")
+    self.setInitiationRegistrationBooleanWidget.addItem("Off")
+    self.setInitiationRegistrationBooleanWidget.addItem("useMomentsAlign")
     self.setInitiationRegistrationBooleanWidget.addItem("useGeometryAlign")
     self.setInitiationRegistrationBooleanWidget.setToolTip(
       "Initialization method used for the MNI152 registration.")
