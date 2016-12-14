@@ -181,7 +181,8 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.setReturnOriginalSpaceBooleanWidget = ctk.ctkCheckBox()
     self.setReturnOriginalSpaceBooleanWidget.setChecked(False)
     self.setReturnOriginalSpaceBooleanWidget.setToolTip(
-      "Choose if you want to transform the final images to its original space. If not, all the input images will be in T1 space.")
+      "Choose if you want to transform the final images to its original space. If not, all the input images will be in T1 space. NOTE: This choice only takes "
+      "effect on the baseline MS lesion simulation, i.e. the longitudinal lesion simulation (if checked) will always return the data using the T1 space.")
     parametersInputFormLayout.addRow("Return output data in the original space",
                                       self.setReturnOriginalSpaceBooleanWidget)
 
@@ -220,7 +221,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     # Sigma
     #
     self.setLesionSigmaWidget = qt.QDoubleSpinBox()
-    self.setLesionSigmaWidget.setMaximum(10)
+    self.setLesionSigmaWidget.setMaximum(3)
     self.setLesionSigmaWidget.setMinimum(0.1)
     self.setLesionSigmaWidget.setSingleStep(0.01)
     self.setLesionSigmaWidget.setValue(1.0)
@@ -245,7 +246,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.setLesionVariabilityWidget.setMaximum(3)
     self.setLesionVariabilityWidget.setMinimum(0.1)
     self.setLesionVariabilityWidget.setSingleStep(0.01)
-    self.setLesionVariabilityWidget.setValue(1.0)
+    self.setLesionVariabilityWidget.setValue(0.5)
     self.setLesionVariabilityWidget.setToolTip("Choose the lesion independent variability level that represents how distinct is each non-connected "
                                          "lesion regarding the voxel intensity gray level. This measure simulates the independent progression "
                                          "for each lesion, where a higher value indicates higher variability among lesions. The parameter is "
@@ -253,17 +254,55 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     parametersMSLesionSimulationFormLayout.addRow("Lesion Variability ", self.setLesionVariabilityWidget)
 
     #
-    # Gray Matter Threshold
+    # MS Longitudinal Lesion Simulation Parameters Area
     #
-    self.setGMThresholdWidget = qt.QDoubleSpinBox()
-    self.setGMThresholdWidget.setMaximum(5)
-    self.setGMThresholdWidget.setMinimum(0.1)
-    self.setGMThresholdWidget.setSingleStep(0.01)
-    self.setGMThresholdWidget.setValue(1.5)
-    self.setGMThresholdWidget.setToolTip("Set the Gray Matter threshold used to refine the simulated lesion map. The simulation supose that the MS lesions"
-                                         "belongs only in the White Matter space. This variable is related to the voxel intensity and the Gray Matter probability"
-                                         "distribution (standard deviation).")
-    parametersMSLesionSimulationFormLayout.addRow("Gray Matter Threshold ", self.setGMThresholdWidget)
+    parametersMSLongitudinalLesionSimulationCollapsibleButton = ctk.ctkCollapsibleButton()
+    parametersMSLongitudinalLesionSimulationCollapsibleButton.text = "MS Longitudinal Lesion Simulation Parameters"
+    self.layout.addWidget(parametersMSLongitudinalLesionSimulationCollapsibleButton)
+
+    # Layout within the dummy collapsible button
+    parametersMSLongitudinalLesionSimulationFormLayout = qt.QFormLayout(parametersMSLongitudinalLesionSimulationCollapsibleButton)
+
+    #
+    # Simulate follow-up?
+    #
+    self.setSimulateFollowUpBooleanWidget = ctk.ctkCheckBox()
+    self.setSimulateFollowUpBooleanWidget.setChecked(False)
+    self.setSimulateFollowUpBooleanWidget.setToolTip(
+      "Simulate an additional longitudinal sequence (given the same input data)? If checked, the MS Lesion Simulator tool will recreate a sequence of exams with "
+      "longitudinal MS lesion pattern.")
+    parametersMSLongitudinalLesionSimulationFormLayout.addRow("Simulate Longitudinal Exams?",
+                                      self.setSimulateFollowUpBooleanWidget)
+
+    #
+    # Follow-ups
+    #
+    self.followUpsSliderWidget = ctk.ctkSliderWidget()
+    self.followUpsSliderWidget.singleStep = 1
+    self.followUpsSliderWidget.minimum = 2
+    self.followUpsSliderWidget.maximum = 6
+    self.followUpsSliderWidget.value = 2
+    self.followUpsSliderWidget.setToolTip("Set the desired number of follow-up acquisitions that will be simulated.")
+    parametersMSLongitudinalLesionSimulationFormLayout.addRow("Follow-ups", self.followUpsSliderWidget)
+
+    #
+    # Balance: Hypointense to isointense lesions
+    #
+    self.setBalanceHypo2IsoWidget = qt.QSpinBox()
+    self.setBalanceHypo2IsoWidget.setMaximum(100)
+    self.setBalanceHypo2IsoWidget.setMinimum(1)
+    self.setBalanceHypo2IsoWidget.setSingleStep(0.1)
+    self.setBalanceHypo2IsoWidget.setValue(56)
+    self.setBalanceHypo2IsoWidget.setToolTip(
+      "Set the percentage of lesions that will change its original signal state along the follow-ups.")
+    parametersMSLongitudinalLesionSimulationFormLayout.addRow("Changing Contrast Balance ", self.setBalanceHypo2IsoWidget)
+
+    #
+    # output follow-ups selector
+    #
+    self.outputFollowUpsSelector = ctk.ctkDirectoryButton()
+    self.outputFollowUpsSelector.setToolTip("Output folder where follow-up image files will be saved.")
+    parametersMSLongitudinalLesionSimulationFormLayout.addRow("Output Follow-Up ", self.outputFollowUpsSelector)
 
     #
     # Advanced Parameters Area
@@ -274,6 +313,19 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
 
     # Layout within the dummy collapsible button
     parametersAdvancedParametersFormLayout = qt.QFormLayout(parametersAvancedParametersCollapsibleButton)
+
+    #
+    # White Matter Threshold
+    #
+    self.setWMThresholdWidget = qt.QDoubleSpinBox()
+    self.setWMThresholdWidget.setMaximum(5)
+    self.setWMThresholdWidget.setMinimum(0.1)
+    self.setWMThresholdWidget.setSingleStep(0.01)
+    self.setWMThresholdWidget.setValue(1.5)
+    self.setWMThresholdWidget.setToolTip("Set the White Matter threshold used to refine the simulated lesion map. The simulation supose that the MS lesions"
+                                         "belongs only in the White Matter space. This variable is related to the voxel intensity and the White Matter probability"
+                                         " distribution (standard deviation).")
+    parametersAdvancedParametersFormLayout.addRow("White Matter Threshold ", self.setWMThresholdWidget)
 
     #
     # Percentage Sampling Area
@@ -340,7 +392,11 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     sigma = self.setLesionSigmaWidget.value
     homogeneity = self.setLesionHomogeneityWidget.value
     variability = self.setLesionVariabilityWidget.value
-    cutFraction = self.setGMThresholdWidget.value
+    isLongitudinal = self.setSimulateFollowUpBooleanWidget.isChecked()
+    numberFollowUp = self.followUpsSliderWidget.value
+    balanceHI = self.setBalanceHypo2IsoWidget.value
+    outputFolder = self.outputFollowUpsSelector.directory
+    cutFraction = self.setWMThresholdWidget.value
     samplingPerc = self.setPercSamplingQWidget.value
     grid = self.setBSplineGridWidget.text
     initiationMethod = self.setInitiationRegistrationBooleanWidget.currentText
@@ -357,6 +413,10 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
               , sigma
               , homogeneity
               , variability
+              , isLongitudinal
+              , numberFollowUp
+              , balanceHI
+              , outputFolder
               , cutFraction
               , samplingPerc
               , grid
@@ -392,7 +452,8 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
           inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace, isBET,
-          lesionLoad, sigma, homogeneity, variability, cutFraction, samplingPerc, grid, initiationMethod):
+          lesionLoad, sigma, homogeneity, variability, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
+          cutFraction, samplingPerc, grid, initiationMethod):
     """
     Run the actual algorithm
     """
@@ -523,6 +584,34 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on DTI-ADC map...")
       logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
       self.doSimulateLesions(ADC_t1, "DTI-ADC", lesionMap, inputADCVolume, sigma, homogeneity, variability)
+
+    if isLongitudinal:
+      #
+      # Simulate Longitudinal Exams
+      #
+      slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T1 volume...")
+      self.doLongitudinalExams(inputT1Volume, "T1", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+
+      if inputFLAIRVolume != None:
+        slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume...")
+        logging.info("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume......")
+        self.doLongitudinalExams(inputFLAIRVolume, "T2-FLAIR", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+      if inputT2Volume != None:
+        slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2 volume...")
+        logging.info("Extra: Generating longitudinal lesion deformation on T2 volume...")
+        self.doLongitudinalExams(inputT2Volume, "T2", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+      if inputPDVolume != None:
+        slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on PD volume...")
+        logging.info("Extra: Generating longitudinal lesion deformation on PD volume...")
+        self.doLongitudinalExams(inputPDVolume, "PD", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+      if inputFAVolume != None:
+        slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
+        logging.info("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
+        self.doLongitudinalExams(inputFAVolume, "DTI-FA", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+      if inputADCVolume != None:
+        slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
+        logging.info("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
+        self.doLongitudinalExams(inputADCVolume, "DTI-ADC", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
 
     #
     # Return inputs to its original space
@@ -693,6 +782,32 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     slicer.cli.run(slicer.modules.brainsresample, None, params, wait_for_completion=True)
 
+  def doLongitudinalExams(self, inputT1Volume, imageModality, lesionLabel, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability):
+    """
+    Execute the SimulateLongitudinalLesions CLI
+    :param inputVolume:
+    :param imageModality:
+    :param lesionLabel:
+    :param numberFollowUp:
+    :param balanceHI:
+    :param outputFolder:
+    :param variability:
+    :param sigma:
+    :param homogeneity:
+    :return:
+    """
+    params = {}
+    params["inputVolume"] = inputVolume.GetID()
+    params["imageModality"] = imageModality
+    params["lesionLabel"] = lesionLabel.GetID()
+    params["numberFollowUp"] = numberFollowUp
+    params["balanceHI"] = balanceHI
+    params["outputFolder"] = outputFolder
+    params["sigma"] = sigma
+    params["homogeneity"] = homogeneity
+    params["variability"] = variability
+
+    slicer.cli.run(slicer.modules.mslongitudinalexams, None, params, wait_for_completion=True)
 
 class MSLesionSimulatorTest(ScriptedLoadableModuleTest):
   """

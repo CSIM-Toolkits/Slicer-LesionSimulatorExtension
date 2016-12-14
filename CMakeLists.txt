@@ -22,6 +22,7 @@ add_subdirectory(MSLesionSimulator)
 add_subdirectory(GenerateMask)
 add_subdirectory(DeformImage)
 add_subdirectory(FilterMask)
+add_subdirectory(MSLongitudinalExams)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

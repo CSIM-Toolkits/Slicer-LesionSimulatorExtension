@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Supporting Modules</category>
+  <title>MS Longitudinal Exams</title>
+  <description><![CDATA[This is a CLI module that can be bundled in an extension]]></description>
+  <version>0.0.1</version>
+  <documentation-url>http://www.example.com/Slicer/Modules/MSLongitudinalExams</documentation-url>
+  <license>Slicer</license>
+  <contributor>FirstName LastName (Institution), FirstName LastName (Institution)</contributor>
+  <acknowledgements>This work was partially funded by NIH grant NXNNXXNNNNNN-NNXN</acknowledgements>
+  <parameters>
+    <label>IO</label>
+    <description><![CDATA[Input/output parameters]]></description>
+    <image type="scalar">
+      <name>inputVolume</name>
+      <label>Input Volume</label>
+      <channel>input</channel>
+      <index>0</index>
+      <description><![CDATA[]]></description>
+    </image>
+    <string-enumeration>
+	      <name>imageModality</name>
+	      <longflag>--type</longflag>
+	      <description><![CDATA[]]></description>
+	      <label>Image Modality</label>
+	      <default>T1</default>
+	      <element>T1</element>
+	      <element>T2</element>
+              <element>T2-FLAIR</element>
+              <element>PD</element>
+              <element>DTI-FA</element>
+              <element>DTI-ADC</element>
+    </string-enumeration>
+    <image type="label">
+      <name>lesionLabel</name>
+      <label>Lesion Mask</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description><![CDATA[Lesion mask]]></description>
+    </image>
+  </parameters>
+<parameters>
+    <label>Simulation Parameters</label>
+    <description><![CDATA[Simulation parameters]]></description>
+    <integer>
+      <name>numberFollowUp</name>
+      <longflag>--numFU</longflag>
+      <label>Number of Follow-up</label>
+      <description><![CDATA[Set the desired number of follow-up acquisitions that will be simulated]]></description>
+      <default>1</default>
+      <constraints>
+        <minimum>1</minimum>
+        <maximum>6</maximum>
+        <step>1</step>
+      </constraints>
+    </integer>
+    <double>
+      <name>balanceHI</name>
+      <longflag>--balanceHI</longflag>
+      <label>Balance Hypo/Iso</label>
+      <description><![CDATA[Set the percentage of lesions that will change its original signal state along the follow-ups]]></description>
+      <default>56</default>
+      <constraints>
+        <minimum>1</minimum>
+        <maximum>99</maximum>
+        <step>1</step>
+      </constraints>
+    </double>
+    <directory>
+    <name>outputFolder</name>
+      <longflag>--outputFolder</longflag>
+      <label>Output Folder</label>
+      <description><![CDATA[Output folder where follow-up image files will be saved.]]></description>
+    </directory>
+    <double>
+      <name>variability</name>
+      <longflag>--variability</longflag>
+      <label>Lesion Independent Variability</label>
+      <description><![CDATA[Choose the lesion independent variability level that represents how distinct is each non-connected lesion regarding the voxel intensity gray level. This measure simulates the independent progression for each lesion, where a higher value indicates higher variability among lesions. The parameter is modulated by the normal standard deviation depending of the image type inserted.]]></description>
+      <default>0.5</default>
+      <constraints>
+        <minimum>0.05</minimum>
+        <maximum>3</maximum>
+        <step>0.01</step>
+      </constraints>
+    </double>
+    <double>
+      <name>sigma</name>
+      <longflag>--sigma</longflag>
+      <label>Lesion Border Smooth Factor</label>
+      <description><![CDATA[Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.]]></description>
+      <default>1.0</default>
+    </double>
+    <double>
+      <name>homogeneity</name>
+      <longflag>--homogeneity</longflag>
+      <label>Lesion Homogeneity Factor</label>
+      <description><![CDATA[Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heteorgenours lesion contrast. This parameter is related to a Gaussian variance given in mm.]]></description>
+      <default>0.5</default>
+    </double>
+    <double>
+      <name>t1Contrast</name>
+      <longflag>--t1Contrast</longflag>
+      <label>T1 Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>0.791</default>
+    </double>
+    <double>
+      <name>t1Std</name>
+      <longflag>--t1Std</longflag>
+      <label>T1 Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.139</default>
+    </double>
+    <double>
+      <name>t2Contrast</name>
+      <longflag>--t2Contrast</longflag>
+      <label>T2 Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.374</default>
+    </double>
+    <double>
+      <name>t2Std</name>
+      <longflag>--t2Std</longflag>
+      <label>T2 Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.353</default>
+    </double>
+    <double>
+      <name>flairContrast</name>
+      <longflag>--flairContrast</longflag>
+      <label>T2-FLAIR Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.323</default>
+    </double>
+    <double>
+      <name>flairStd</name>
+      <longflag>--flairStd</longflag>
+      <label>T2-FLAIR Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.068</default>
+    </double>
+    <double>
+      <name>pdContrast</name>
+      <longflag>--pdContrast</longflag>
+      <label>PD Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.328</default>
+    </double>
+    <double>
+      <name>pdStd</name>
+      <longflag>--pdStd</longflag>
+      <label>PD Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.133</default>
+    </double>
+    <double>
+      <name>faContrast</name>
+      <longflag>--faContrast</longflag>
+      <label>DTI-FA Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>0.739</default>
+    </double>
+    <double>
+      <name>faStd</name>
+      <longflag>--faStd</longflag>
+      <label>DTI-FA Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.177</default>
+    </double>
+    <double>
+      <name>adcContrast</name>
+      <longflag>--adcContrast</longflag>
+      <label>DTI-ADC Lesion Contrast</label>
+      <description><![CDATA[...]]></description>
+      <default>1.214</default>
+    </double>
+    <double>
+      <name>adcStd</name>
+      <longflag>--adcStd</longflag>
+      <label>DTI-ADC Lesion Sigma</label>
+      <description><![CDATA[...]]></description>
+      <default>0.134</default>
+    </double>
+</parameters>
+<parameters advanced="true">
+<label>Extra outputs</label>
+    <description><![CDATA[Extra outputs data for debug purposes.]]></description>
+    <boolean>
+      <name>deformationMapVolume</name>
+      <longflag>--isDefMap</longflag>
+      <label>Lesion Deformation Map</label>
+      <default>false</default>
+      <description><![CDATA[Lesion deformation map used for lesion simulation in the input volume. If selected, the output volume is overwrited.]]></description>
+    </boolean>
+</parameters>
+</executable>
