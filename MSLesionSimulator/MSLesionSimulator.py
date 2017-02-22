@@ -651,10 +651,10 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     if inputFLAIRVolume != None:
       slicer.mrmlScene.RemoveNode(regFLAIRtoT1Transform)
-      slicer.mrmlScene.RemoveNode(T2_t1)
+      slicer.mrmlScene.RemoveNode(FLAIR_t1)
     if inputT2Volume != None:
       slicer.mrmlScene.RemoveNode(regT2toT1Transform)
-      slicer.mrmlScene.RemoveNode(FLAIR_t1)
+      slicer.mrmlScene.RemoveNode(T2_t1)
     if inputPDVolume != None:
       slicer.mrmlScene.RemoveNode(regPDtoT1Transform)
       slicer.mrmlScene.RemoveNode(PD_t1)
