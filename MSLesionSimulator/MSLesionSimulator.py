@@ -862,7 +862,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     slicer.cli.run(slicer.modules.brainsresample, None, params, wait_for_completion=True)
 
-  def doLongitudinalExams(self, inputT1Volume, imageModality, lesionLabel, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability):
+  def doLongitudinalExams(self, inputVolume, imageModality, lesionLabel, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability):
     """
     Execute the SimulateLongitudinalLesions CLI
     :param inputVolume:
