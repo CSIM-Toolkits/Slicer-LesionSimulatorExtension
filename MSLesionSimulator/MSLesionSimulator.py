@@ -160,22 +160,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     parametersInputFormLayout.addRow("DTI-ADC Map ", self.inputADCSelector)
 
     #
-    # output lesion label selector
-    #
-    self.outputLesionLabelSelector = slicer.qMRMLNodeComboBox()
-    self.outputLesionLabelSelector.nodeTypes = ["vtkMRMLLabelMapVolumeNode"]
-    self.outputLesionLabelSelector.selectNodeUponCreation = True
-    self.outputLesionLabelSelector.addEnabled = True
-    self.outputLesionLabelSelector.renameEnabled = True
-    self.outputLesionLabelSelector.removeEnabled = True
-    self.outputLesionLabelSelector.noneEnabled = False
-    self.outputLesionLabelSelector.showHidden = False
-    self.outputLesionLabelSelector.showChildNodeTypes = False
-    self.outputLesionLabelSelector.setMRMLScene( slicer.mrmlScene )
-    self.outputLesionLabelSelector.setToolTip( "Pick the output lesion label." )
-    parametersInputFormLayout.addRow("Output Lesion Label ", self.outputLesionLabelSelector)
-
-    #
     # Return inputs to original space
     #
     self.setReturnOriginalSpaceBooleanWidget = ctk.ctkCheckBox()
@@ -197,16 +181,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
                                       self.setIsBETBooleanWidget)
 
     #
-    # MS Lesion Simulation Parameters Area
-    #
-    parametersMSLesionSimulationCollapsibleButton = ctk.ctkCollapsibleButton()
-    parametersMSLesionSimulationCollapsibleButton.text = "MS Lesion Simulation Parameters"
-    self.layout.addWidget(parametersMSLesionSimulationCollapsibleButton)
-
-    # Layout within the dummy collapsible button
-    parametersMSLesionSimulationFormLayout = qt.QFormLayout(parametersMSLesionSimulationCollapsibleButton)
-
-    #
     # Lesion Load value
     #
     self.lesionLoadSliderWidget = ctk.ctkSliderWidget()
@@ -215,43 +189,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.lesionLoadSliderWidget.maximum = 50
     self.lesionLoadSliderWidget.value = 10
     self.lesionLoadSliderWidget.setToolTip("Set the desired lesion load to be used for MS lesion generation.")
-    parametersMSLesionSimulationFormLayout.addRow("Lesion Load", self.lesionLoadSliderWidget)
-
-    #
-    # Sigma
-    #
-    self.setLesionSigmaWidget = qt.QDoubleSpinBox()
-    self.setLesionSigmaWidget.setMaximum(3)
-    self.setLesionSigmaWidget.setMinimum(0.1)
-    self.setLesionSigmaWidget.setSingleStep(0.01)
-    self.setLesionSigmaWidget.setValue(1.0)
-    self.setLesionSigmaWidget.setToolTip("Choose the Gaussian variance to be applied in the final lesion map. The scale is given in mm.")
-    parametersMSLesionSimulationFormLayout.addRow("Sigma ", self.setLesionSigmaWidget)
-
-    #
-    # Homogeneity
-    #
-    self.setLesionHomogeneityWidget = qt.QDoubleSpinBox()
-    self.setLesionHomogeneityWidget.setMaximum(10)
-    self.setLesionHomogeneityWidget.setMinimum(0.1)
-    self.setLesionHomogeneityWidget.setSingleStep(0.01)
-    self.setLesionHomogeneityWidget.setValue(0.5)
-    self.setLesionHomogeneityWidget.setToolTip("Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heterogenous lesion contrast. This parameter is related to a Gaussian variance given in mm.")
-    parametersMSLesionSimulationFormLayout.addRow("Lesion Homogeneity ", self.setLesionHomogeneityWidget)
-
-    #
-    # Lesion Independent Variability
-    #
-    self.setLesionVariabilityWidget = qt.QDoubleSpinBox()
-    self.setLesionVariabilityWidget.setMaximum(3)
-    self.setLesionVariabilityWidget.setMinimum(0.1)
-    self.setLesionVariabilityWidget.setSingleStep(0.01)
-    self.setLesionVariabilityWidget.setValue(0.5)
-    self.setLesionVariabilityWidget.setToolTip("Choose the lesion independent variability level that represents how distinct is each non-connected "
-                                         "lesion regarding the voxel intensity gray level. This measure simulates the independent progression "
-                                         "for each lesion, where a higher value indicates higher variability among lesions. The parameter is "
-                                         "modulated by the normal standard deviation depending of the image type inserted.")
-    parametersMSLesionSimulationFormLayout.addRow("Lesion Variability ", self.setLesionVariabilityWidget)
+    parametersInputFormLayout.addRow("Lesion Load", self.lesionLoadSliderWidget)
 
     #
     # MS Longitudinal Lesion Simulation Parameters Area
@@ -307,12 +245,13 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     #
     # Advanced Parameters Area
     #
-    parametersAvancedParametersCollapsibleButton = ctk.ctkCollapsibleButton()
-    parametersAvancedParametersCollapsibleButton.text = "Advanced Parameters"
-    self.layout.addWidget(parametersAvancedParametersCollapsibleButton)
+    parametersAdvancedParametersCollapsibleButton = ctk.ctkCollapsibleButton()
+    parametersAdvancedParametersCollapsibleButton.text = "Advanced Parameters"
+    self.layout.addWidget(parametersAdvancedParametersCollapsibleButton)
+    parametersAdvancedParametersCollapsibleButton.click()
 
     # Layout within the dummy collapsible button
-    parametersAdvancedParametersFormLayout = qt.QFormLayout(parametersAvancedParametersCollapsibleButton)
+    parametersAdvancedParametersFormLayout = qt.QFormLayout(parametersAdvancedParametersCollapsibleButton)
 
     #
     # White Matter Threshold
@@ -370,7 +309,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     # connections
     self.applyButton.connect('clicked(bool)', self.onApplyButton)
     self.inputT1Selector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
-    self.outputLesionLabelSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
 
     # Add vertical spacer
     self.layout.addStretch(1)
@@ -382,16 +320,16 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     pass
 
   def onSelect(self):
-    self.applyButton.enabled = self.inputT1Selector.currentNode() and self.outputLesionLabelSelector.currentNode()
+    self.applyButton.enabled = self.inputT1Selector.currentNode()
 
   def onApplyButton(self):
     logic = MSLesionSimulatorLogic()
     returnSpace = self.setReturnOriginalSpaceBooleanWidget.isChecked()
     isBET = self.setIsBETBooleanWidget.isChecked()
     lesionLoad = self.lesionLoadSliderWidget.value
-    sigma = self.setLesionSigmaWidget.value
-    homogeneity = self.setLesionHomogeneityWidget.value
-    variability = self.setLesionVariabilityWidget.value
+    # sigma = self.setLesionSigmaWidget.value
+    # homogeneity = self.setLesionHomogeneityWidget.value
+    # variability = self.setLesionVariabilityWidget.value
     isLongitudinal = self.setSimulateFollowUpBooleanWidget.isChecked()
     numberFollowUp = self.followUpsSliderWidget.value
     balanceHI = self.setBalanceHypo2IsoWidget.value
@@ -406,13 +344,9 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
               , self.inputPDSelector.currentNode()
               , self.inputFASelector.currentNode()
               , self.inputADCSelector.currentNode()
-              , self.outputLesionLabelSelector.currentNode()
               , returnSpace
               , isBET
               , lesionLoad
-              , sigma
-              , homogeneity
-              , variability
               , isLongitudinal
               , numberFollowUp
               , balanceHI
@@ -451,8 +385,8 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
-          inputFAVolume, inputADCVolume, outputLesionLabel, returnSpace, isBET,
-          lesionLoad, sigma, homogeneity, variability, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
+          inputFAVolume, inputADCVolume, returnSpace, isBET,
+          lesionLoad, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
           cutFraction, samplingPerc, grid, initiationMethod):
     """
     Run the actual algorithm
@@ -470,8 +404,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         slicer.util.showStatusMessage("Pre-processing: Conforming T2 volume to T1 space...")
         regT2toT1Transform = slicer.vtkMRMLLinearTransformNode()
         slicer.mrmlScene.AddNode(regT2toT1Transform)
-        # T2_t1 = slicer.vtkMRMLScalarVolumeNode()
-        # slicer.mrmlScene.AddNode(T2_t1)
         clonedT2Volume = volumesLogic.CloneVolume(slicer.mrmlScene, inputT2Volume, "Cloned T2")
 
         self.conformInputSpace(inputT1Volume, inputT2Volume, inputT2Volume, regT2toT1Transform)
@@ -482,8 +414,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         slicer.util.showStatusMessage("Pre-processing: Conforming T2-FLAIR volume to T1 space...")
         regFLAIRtoT1Transform = slicer.vtkMRMLLinearTransformNode()
         slicer.mrmlScene.AddNode(regFLAIRtoT1Transform)
-        # FLAIR_t1 = slicer.vtkMRMLScalarVolumeNode()
-        # slicer.mrmlScene.AddNode(FLAIR_t1)
         clonedFLAIRVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFLAIRVolume, "Cloned FLAIR")
 
         self.conformInputSpace(inputT1Volume, inputFLAIRVolume, inputFLAIRVolume, regFLAIRtoT1Transform)
@@ -494,8 +424,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         slicer.util.showStatusMessage("Pre-processing: Conforming PD volume to T1 space...")
         regPDtoT1Transform = slicer.vtkMRMLLinearTransformNode()
         slicer.mrmlScene.AddNode(regPDtoT1Transform)
-        # PD_t1 = slicer.vtkMRMLScalarVolumeNode()
-        # slicer.mrmlScene.AddNode(PD_t1)
         clonedPDVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputPDVolume, "Cloned PD")
 
         self.conformInputSpace(inputT1Volume, inputPDVolume, inputPDVolume, regPDtoT1Transform)
@@ -506,8 +434,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         slicer.util.showStatusMessage("Pre-processing: Conforming DTI-FA map to T1 space...")
         regFAtoT1Transform = slicer.vtkMRMLLinearTransformNode()
         slicer.mrmlScene.AddNode(regFAtoT1Transform)
-        # FA_t1 = slicer.vtkMRMLScalarVolumeNode()
-        # slicer.mrmlScene.AddNode(FA_t1)
         clonedFAVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFAVolume, "Cloned FA")
 
         self.conformInputSpace(inputT1Volume, inputFAVolume, inputFAVolume, regFAtoT1Transform)
@@ -518,15 +444,13 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         slicer.util.showStatusMessage("Pre-processing: Conforming DTI-ADC map to T1 space...")
         regADCtoT1Transform = slicer.vtkMRMLLinearTransformNode()
         slicer.mrmlScene.AddNode(regADCtoT1Transform)
-        # ADC_t1 = slicer.vtkMRMLScalarVolumeNode()
-        # slicer.mrmlScene.AddNode(ADC_t1)
         clonedADCVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputADCVolume, "Cloned ADC")
 
         self.conformInputSpace(inputT1Volume, inputADCVolume, inputADCVolume, regADCtoT1Transform)
       except:
         logging.info("Exception caught when trying to create node for ADC image in T1 space.")
 
-    slicer.util.showStatusMessage("Step 1/5: Reading brain templates...")
+    slicer.util.showStatusMessage("Step 1/4: Reading brain templates...")
     logging.info("Step 1/5: Reading brain templates...")
     if platform.system() is "Windows":
       home = expanduser("%userprofile%")
@@ -539,7 +463,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # Registration between Input Image and MNI Image Space
     #
-    slicer.util.showStatusMessage("Step 3/5: MNI152 template to native space...")
+    slicer.util.showStatusMessage("Step 2/4: MNI152 template to native space...")
     logging.info("Step 3/5: MNI152 template to native space...")
     if isBET:
       if platform.system() is "Windows":
@@ -562,10 +486,11 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
     #
-    slicer.util.showStatusMessage("Step 4/5: Simulating MS lesion map...")
+    slicer.util.showStatusMessage("Step 3/4: Simulating MS lesion map...")
     logging.info("Step 4/5: Simulating MS lesion map...")
 
-    lesionMap = outputLesionLabel
+    lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
+    slicer.mrmlScene.AddNode(lesionMap)
     if platform.system() is "Windows":
       self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
@@ -576,48 +501,100 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
-    self.doFilterMask(inputT1Volume, lesionMap, lesionMap, cutFraction)
+    # Lesion Map: T1
+    lesionMapT1 = slicer.vtkMRMLLabelMapVolumeNode()
+    slicer.mrmlScene.AddNode(lesionMapT1)
+    lesionMapT1.SetName("T1_lesion_label")
+    self.doFilterMask(inputT1Volume, lesionMap, lesionMapT1, cutFraction)
+
+    if inputFLAIRVolume is not None:
+      # Lesion Map: T2-FLAIR
+      lesionMapFLAIR = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMapFLAIR)
+      lesionMapFLAIR.SetName("T2FLAIR_lesion_label")
+      self.doFilterMask(inputT2Volume, lesionMap, lesionMapFLAIR, cutFraction)
+
+    if inputT2Volume is not None:
+      # Lesion Map: T2
+      lesionMapT2 = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMapT2)
+      lesionMapT2.SetName("T2_lesion_label")
+      self.doFilterMask(inputT2Volume, lesionMap, lesionMapT2, cutFraction)
+
+    if inputPDVolume is not None:
+      # Lesion Map: PD
+      lesionMapPD = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMapPD)
+      lesionMapPD.SetName("PD_lesion_label")
+      self.doFilterMask(inputPDVolume, lesionMap, lesionMapPD, cutFraction)
+
+    if inputFAVolume is not None:
+      # Lesion Map: DTI-FA
+      lesionMapFA = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMapFA)
+      lesionMapFA.SetName("FA_lesion_label")
+      self.doFilterMask(inputFAVolume, lesionMap, lesionMapFA, cutFraction)
+
+    if inputADCVolume is not None:
+      # Lesion Map: DTI-FA
+      lesionMapADC = slicer.vtkMRMLLabelMapVolumeNode()
+      slicer.mrmlScene.AddNode(lesionMapADC)
+      lesionMapADC.SetName("ADC_lesion_label")
+      self.doFilterMask(inputADCVolume, lesionMap, lesionMapADC, cutFraction)
+
 
     #
     # Generating lesions in each input image
     #
-    slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T1 volume...")
+    # List of parameters: Sigma
+    Sigma= {}
+    Sigma["T1"]=1.5
+    Sigma["T2"]=1.5
+    Sigma["PD"]=1.5
+    Sigma["T2FLAIR"]=1.5
+    Sigma["DTI-FA"]=1.0
+    Sigma["DTI-ADC"]=1.3
+
+    homogeneity= 0.5
+    variability = 0.5
+
+    slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T1 volume...")
     logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
-    self.doSimulateLesions(inputT1Volume, "T1", lesionMap, inputT1Volume, sigma, homogeneity, variability)
+    self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], homogeneity, variability)
 
     if inputFLAIRVolume is not None:
       try:
-        slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
+        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2-FLAIR volume...")
         logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
-        self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMap, inputFLAIRVolume, sigma, homogeneity, variability)
+        self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], homogeneity, variability)
       except:
         logging.info("Exception caught when trying to apply lesion deformation in T2-FLAIR volume.")
     if inputT2Volume is not None:
       try:
-        slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on T2 volume...")
+        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2 volume...")
         logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
-        self.doSimulateLesions(inputT2Volume, "T2", lesionMap, inputT2Volume, sigma, homogeneity, variability)
+        self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], homogeneity, variability)
       except:
         logging.info("Exception caught when trying to apply lesion deformation in T2 volume.")
     if inputPDVolume is not None:
       try:
-        slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on PD volume...")
+        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on PD volume...")
         logging.info("Step 5/5: Applying lesion deformation on PD volume...")
-        self.doSimulateLesions(inputPDVolume, "PD", lesionMap, inputPDVolume, sigma, homogeneity, variability)
+        self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], homogeneity, variability)
       except:
         logging.info("Exception caught when trying to apply lesion deformation in PD volume.")
     if inputFAVolume is not None:
       try:
-        slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on DTI-FA map...")
+        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-FA map...")
         logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
-        self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMap, inputFAVolume, sigma, homogeneity, variability)
+        self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], homogeneity, variability)
       except:
         logging.info("Exception caught when trying to apply lesion deformation in FA volume.")
     if inputADCVolume is not None:
       try:
-        slicer.util.showStatusMessage("Step 5/5: Applying lesion deformation on DTI-ADC map...")
+        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-ADC map...")
         logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
-        self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMap, inputADCVolume, sigma, homogeneity, variability)
+        self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], homogeneity, variability)
       except:
         logging.info("Exception caught when trying to apply lesion deformation in ADC volume.")
 
@@ -626,41 +603,41 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       # Simulate Longitudinal Exams
       #
       slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T1 volume...")
-      self.doLongitudinalExams(inputT1Volume, "T1", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+      self.doLongitudinalExams(inputT1Volume, "T1", lesionMapT1, outputFolder, numberFollowUp, balanceHI, Sigma["T1"], homogeneity, variability)
 
       if inputFLAIRVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume......")
-          self.doLongitudinalExams(inputFLAIRVolume, "T2-FLAIR", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+          self.doLongitudinalExams(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, outputFolder, numberFollowUp, balanceHI, Sigma["T2FLAIR"], homogeneity, variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in T2-FLAIR volume.")
       if inputT2Volume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2 volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on T2 volume...")
-          self.doLongitudinalExams(inputT2Volume, "T2", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+          self.doLongitudinalExams(inputT2Volume, "T2", lesionMapT2, outputFolder, numberFollowUp, balanceHI, Sigma["T2"], homogeneity, variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in T2 volume.")
       if inputPDVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on PD volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on PD volume...")
-          self.doLongitudinalExams(inputPDVolume, "PD", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+          self.doLongitudinalExams(inputPDVolume, "PD", lesionMapPD, outputFolder, numberFollowUp, balanceHI, Sigma["PD"], homogeneity, variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in PD volume.")
       if inputFAVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
-          self.doLongitudinalExams(inputFAVolume, "DTI-FA", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+          self.doLongitudinalExams(inputFAVolume, "DTI-FA", lesionMapFA, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-FA"], homogeneity, variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in FA volume.")
       if inputADCVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
-          self.doLongitudinalExams(inputADCVolume, "DTI-ADC", lesionMap, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability)
+          self.doLongitudinalExams(inputADCVolume, "DTI-ADC", lesionMapADC, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-ADC"], homogeneity, variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in ADC volume.")
 
@@ -713,6 +690,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     slicer.mrmlScene.RemoveNode(MNI_t1)
     slicer.mrmlScene.RemoveNode(regMNItoT1Transform)
     slicer.mrmlScene.RemoveNode(MNINode)
+    slicer.mrmlScene.RemoveNode(lesionMap)
 
     if inputFLAIRVolume is not None:
       try:
