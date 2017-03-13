@@ -240,6 +240,11 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     #
     self.outputFollowUpsSelector = ctk.ctkDirectoryButton()
     self.outputFollowUpsSelector.setToolTip("Output folder where follow-up image files will be saved.")
+    if platform.system() is "Windows":
+      home = expanduser("%userprofile%")
+    else:
+      home = expanduser("~")
+    self.outputFollowUpsSelector.directory = home
     parametersMSLongitudinalLesionSimulationFormLayout.addRow("Output Follow-Up ", self.outputFollowUpsSelector)
 
     #
@@ -498,7 +503,12 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
 
     # Transforming lesion map to native space
+
+    # Get transform logic for hardening transforms
+    transformLogic = slicer.vtkSlicerTransformLogic()
+
     self.applyRegistrationTransform(lesionMap,inputT1Volume,lesionMap,regMNItoT1Transform,False, True)
+    transformLogic.hardenTransform(lesionMap)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
     # Lesion Map: T1
@@ -548,11 +558,11 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # List of parameters: Sigma
     Sigma= {}
-    Sigma["T1"]=1.5
-    Sigma["T2"]=1.5
-    Sigma["PD"]=1.5
-    Sigma["T2FLAIR"]=1.5
-    Sigma["DTI-FA"]=1.0
+    Sigma["T1"]=0.75
+    Sigma["T2"]=0.75
+    Sigma["PD"]=0.75
+    Sigma["T2FLAIR"]=0.75
+    Sigma["DTI-FA"]=1.5
     Sigma["DTI-ADC"]=1.3
 
     homogeneity= 0.5
