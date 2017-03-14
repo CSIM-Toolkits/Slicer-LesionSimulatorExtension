@@ -522,7 +522,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       lesionMapFLAIR = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapFLAIR)
       lesionMapFLAIR.SetName("T2FLAIR_lesion_label")
-      self.doFilterMask(inputT2Volume, lesionMap, lesionMapFLAIR, cutFraction)
+      self.doFilterMask(inputFLAIRVolume, lesionMap, lesionMapFLAIR, cutFraction)
 
     if inputT2Volume is not None:
       # Lesion Map: T2
