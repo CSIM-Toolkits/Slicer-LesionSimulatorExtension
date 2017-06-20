@@ -64,7 +64,7 @@ int DoIt( int argc, char * argv[], T )
     //Prepare information constants and arrays
     std::string path = databasePath;
     int numberOfSizes = 5;
-    int infoArray [5] = {283, 258, 34, 22, 25};
+    int infoArray [5] = {950, 944, 138, 117, 75};
     int maxSizeArray [5] = {100, 500, 1000, 5000, 15000};
     std::string nameArray [5] = {"50-100", "100-500", "500-1000", "1000-5000", "5000-more"};
 
@@ -126,7 +126,7 @@ int DoIt( int argc, char * argv[], T )
 
             if(currentLoad + loadToAdd > desiredLoad){
                 satisfyLesionLoad = false;
-                std::cout<<"cant add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
+                std::cout<<"can't add selected lesion. Size = "<<size<<" volume = "<< loadToAdd<<std::endl;
 
                 if( size == 0 ){
                     currentLoad=desiredLoad+1;
