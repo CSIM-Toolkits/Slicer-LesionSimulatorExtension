@@ -48,7 +48,7 @@ int DoIt( int argc, char * argv[], T )
 
     typedef    T              InputPixelType;
     typedef    T              OutputPixelType;
-    typedef    unsigned char  LabelPixelType;
+    typedef    unsigned short  LabelPixelType;
 
     typedef itk::Image<InputPixelType,  3>    InputImageType;
     typedef itk::Image<OutputPixelType, 3>    OutputImageType;
