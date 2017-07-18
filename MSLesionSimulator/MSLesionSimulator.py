@@ -568,47 +568,47 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     homogeneity= 0.5
     variability = 0.5
 
-    slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T1 volume...")
-    logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
-    self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], homogeneity, variability)
+    if not isLongitudinal:
+      slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T1 volume...")
+      logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
+      self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], homogeneity, variability)
 
-    if inputFLAIRVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2-FLAIR volume...")
-        logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
-        self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], homogeneity, variability)
-      except:
-        logging.info("Exception caught when trying to apply lesion deformation in T2-FLAIR volume.")
-    if inputT2Volume is not None:
-      try:
-        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2 volume...")
-        logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
-        self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], homogeneity, variability)
-      except:
-        logging.info("Exception caught when trying to apply lesion deformation in T2 volume.")
-    if inputPDVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on PD volume...")
-        logging.info("Step 5/5: Applying lesion deformation on PD volume...")
-        self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], homogeneity, variability)
-      except:
-        logging.info("Exception caught when trying to apply lesion deformation in PD volume.")
-    if inputFAVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-FA map...")
-        logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
-        self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], homogeneity, variability)
-      except:
-        logging.info("Exception caught when trying to apply lesion deformation in FA volume.")
-    if inputADCVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-ADC map...")
-        logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
-        self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], homogeneity, variability)
-      except:
-        logging.info("Exception caught when trying to apply lesion deformation in ADC volume.")
-
-    if isLongitudinal:
+      if inputFLAIRVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2-FLAIR volume...")
+          logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
+          self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], homogeneity, variability)
+        except:
+          logging.info("Exception caught when trying to apply lesion deformation in T2-FLAIR volume.")
+      if inputT2Volume is not None:
+        try:
+          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2 volume...")
+          logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
+          self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], homogeneity, variability)
+        except:
+          logging.info("Exception caught when trying to apply lesion deformation in T2 volume.")
+      if inputPDVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on PD volume...")
+          logging.info("Step 5/5: Applying lesion deformation on PD volume...")
+          self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], homogeneity, variability)
+        except:
+          logging.info("Exception caught when trying to apply lesion deformation in PD volume.")
+      if inputFAVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-FA map...")
+          logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
+          self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], homogeneity, variability)
+        except:
+          logging.info("Exception caught when trying to apply lesion deformation in FA volume.")
+      if inputADCVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-ADC map...")
+          logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
+          self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], homogeneity, variability)
+        except:
+          logging.info("Exception caught when trying to apply lesion deformation in ADC volume.")
+    else:
       #
       # Simulate Longitudinal Exams
       #
