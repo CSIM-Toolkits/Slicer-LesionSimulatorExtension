@@ -58,7 +58,7 @@ int DoIt( int argc, char * argv[], T )
     PARSE_ARGS;
 
     typedef    T                    InputPixelType;
-    typedef    unsigned char        LabelPixelType;
+    typedef    unsigned short       LabelPixelType;
     typedef    T                    OutputPixelType;
     typedef itk::Image<float, 3>    CastImageType;
 
@@ -175,6 +175,7 @@ int DoIt( int argc, char * argv[], T )
         nChangingLesion = sortLesions->GetNumberOfObjects() * static_cast<double>((double)balanceHI/(double)100.0);
         cout<<"Time point "<<t<<" simulation"<<endl;
         for (unsigned int lesion = nLesion; lesion >= 1; --lesion) {
+            cout<<"Modulating lesion "<<(nLesion - lesion) + 1<<" of "<<nLesion<<"..."<<endl;
             DClevel=0.0;
             if (nChangingLesion>0) {
                 lesionMaskDeformationMap->SetMaskImage(sortLesions->GetOutput());
