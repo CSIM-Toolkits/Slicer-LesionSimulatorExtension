@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>Supporting Modules</category>
+  <category>Utilities.CSIM Supporting Modules.Lesion Simulator</category>
   <title>MS Longitudinal Exams</title>
-  <description><![CDATA[This is a CLI module that can be bundled in an extension]]></description>
+  <description><![CDATA[This is a CLI supporting module and it is supposed to not be used directly with a simple input image]]></description>
   <version>0.0.1</version>
-  <documentation-url>http://www.example.com/Slicer/Modules/MSLongitudinalExams</documentation-url>
+  <documentation-url>https://www.slicer.org/wiki/Documentation/Nightly/Extensions/LesionSimulator</documentation-url>
   <license>Slicer</license>
-  <contributor>FirstName LastName (Institution), FirstName LastName (Institution)</contributor>
-  <acknowledgements>This work was partially funded by NIH grant NXNNXXNNNNNN-NNXN</acknowledgements>
+  <contributor>Antonio Carlos da Silva Senra Filho (CSIM - USP - RP), Fabricio Henrique Simozo (CSIM - USP - RP)</contributor>
+  <acknowledgements>This work was partially funded by CNPq grant 201871/2015-7/SWE and CAPES</acknowledgements>
   <parameters>
     <label>IO</label>
     <description><![CDATA[Input/output parameters]]></description>
