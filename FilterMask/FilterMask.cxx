@@ -60,7 +60,14 @@ int DoIt( int argc, char * argv[], T )
     statistics->SetInput(readerMask->GetOutput());
     statistics->Update();
 
-    int initialVolume = statistics->GetSum();
+    //Get voxel dimensions for volume calculation
+    const typename LabelImageType::SpacingType& spacing = readerMask->GetOutput()->GetSpacing();
+
+    double voxelVolume = 1;
+    for (int i=0; i<spacing.GetNumberOfComponents(); i++)
+        voxelVolume *= spacing[i];
+
+    double initialVolume = statistics->GetSum() * voxelVolume;
     std::cout<<"Initial volume = "<< initialVolume << std::endl;
 
     //Get distribution descriptive values
@@ -112,7 +119,7 @@ int DoIt( int argc, char * argv[], T )
     statistics->SetInput(maskImage);
     statistics->Update();
 
-    int finalVolume = statistics->GetSum();
+    double finalVolume = statistics->GetSum() * voxelVolume;
 
     std::cout<<"Final volume = "<< finalVolume << "  Difference = "<< initialVolume-finalVolume <<std::endl;
 
