@@ -63,7 +63,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     # Input Parameters Area
     #
     parametersInputCollapsibleButton = ctk.ctkCollapsibleButton()
-    parametersInputCollapsibleButton.text = "Input Parameters"
+    parametersInputCollapsibleButton.text = "Input Parameters hey yea"
     self.layout.addWidget(parametersInputCollapsibleButton)
 
     # Layout within the dummy collapsible button
@@ -456,13 +456,15 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     slicer.util.showStatusMessage("Step 1/4: Reading brain templates...")
     logging.info("Step 1/5: Reading brain templates...")
-    if platform.system() is "Windows":
-      home = expanduser("%userprofile%")
-      databasePath = home + "\\MSlesion_database"
-    else:
-      home = expanduser("~")
-      databasePath = home + "/MSlesion_database"
 
+    modulePath = os.path.dirname(slicer.modules.mslesionsimulator.path)
+
+    if platform.system() is "Windows":
+
+      databasePath = modulePath + "\\Resources\\MSlesion_database"
+    else:
+
+      databasePath = modulePath + "/Resources/MSlesion_database"
 
     #
     # Registration between Input Image and MNI Image Space
