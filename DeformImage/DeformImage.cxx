@@ -132,9 +132,6 @@ int DoIt( int argc, char * argv[], T )
         defMapIt.Set(normalGenerator->GetVariate()*sqrt(gaussian->GetVariance()) + gaussian->GetMean());
         ++defMapIt;
     }
-    typename SmoothType::Pointer smoothDeformationMap = SmoothType::New();
-    smoothDeformationMap->SetInput(deformationMap);
-    smoothDeformationMap->SetSigma(homogeneity);
 
     //Mask deformation map, adding independent intensity levels, and smooth lesion borders
     CastImageType::Pointer lesionMaskDeformationMapDCLevel = CastImageType::New();
@@ -145,7 +142,7 @@ int DoIt( int argc, char * argv[], T )
     lesionMaskDeformationMapDCLevel->Allocate();
 
     typename MaskNegateType::Pointer lesionMaskDeformationMap = MaskNegateType::New();
-    lesionMaskDeformationMap->SetInput(smoothDeformationMap->GetOutput());
+    lesionMaskDeformationMap->SetInput(deformationMap);
     lesionMaskDeformationMap->SetOutsideValue(0.0);
 
     typename ConnectedType::Pointer connectedLesions = ConnectedType::New();

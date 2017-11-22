@@ -69,13 +69,6 @@
       <default>1.0</default>
     </double>
     <double>
-      <name>homogeneity</name>
-      <longflag>--homogeneity</longflag>
-      <label>Lesion Homogeneity Factor</label>
-      <description><![CDATA[Choose the lesion homogeneity present in the lesion simulation. Lower values give a more heteorgenours lesion contrast. This parameter is related to a Gaussian variance given in mm.]]></description>
-      <default>0.5</default>
-    </double>
-    <double>
       <name>t1Contrast</name>
       <longflag>--t1Contrast</longflag>
       <label>T1 Lesion Contrast</label>
@@ -172,3 +165,4 @@
     </boolean>
 </parameters>
 </executable>
+

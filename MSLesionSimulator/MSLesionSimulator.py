@@ -333,7 +333,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     isBET = self.setIsBETBooleanWidget.isChecked()
     lesionLoad = self.lesionLoadSliderWidget.value
     # sigma = self.setLesionSigmaWidget.value
-    # homogeneity = self.setLesionHomogeneityWidget.value
     # variability = self.setLesionVariabilityWidget.value
     isLongitudinal = self.setSimulateFollowUpBooleanWidget.isChecked()
     numberFollowUp = self.followUpsSliderWidget.value
@@ -565,47 +564,46 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     Sigma["DTI-FA"]=1.5
     Sigma["DTI-ADC"]=1.3
 
-    homogeneity= 0.5
     variability = 0.5
 
     if not isLongitudinal:
       slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T1 volume...")
       logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
-      self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], homogeneity, variability)
+      self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], variability)
 
       if inputFLAIRVolume is not None:
         try:
           slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2-FLAIR volume...")
           logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
-          self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], homogeneity, variability)
+          self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in T2-FLAIR volume.")
       if inputT2Volume is not None:
         try:
           slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2 volume...")
           logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
-          self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], homogeneity, variability)
+          self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in T2 volume.")
       if inputPDVolume is not None:
         try:
           slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on PD volume...")
           logging.info("Step 5/5: Applying lesion deformation on PD volume...")
-          self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], homogeneity, variability)
+          self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in PD volume.")
       if inputFAVolume is not None:
         try:
           slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-FA map...")
           logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
-          self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], homogeneity, variability)
+          self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in FA volume.")
       if inputADCVolume is not None:
         try:
           slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-ADC map...")
           logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
-          self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], homogeneity, variability)
+          self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in ADC volume.")
     else:
@@ -613,41 +611,41 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       # Simulate Longitudinal Exams
       #
       slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T1 volume...")
-      self.doLongitudinalExams(inputT1Volume, "T1", lesionMapT1, outputFolder, numberFollowUp, balanceHI, Sigma["T1"], homogeneity, variability)
+      self.doLongitudinalExams(inputT1Volume, "T1", lesionMapT1, outputFolder, numberFollowUp, balanceHI, Sigma["T1"], variability)
 
       if inputFLAIRVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on T2-FLAIR volume......")
-          self.doLongitudinalExams(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, outputFolder, numberFollowUp, balanceHI, Sigma["T2FLAIR"], homogeneity, variability)
+          self.doLongitudinalExams(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, outputFolder, numberFollowUp, balanceHI, Sigma["T2FLAIR"], variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in T2-FLAIR volume.")
       if inputT2Volume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on T2 volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on T2 volume...")
-          self.doLongitudinalExams(inputT2Volume, "T2", lesionMapT2, outputFolder, numberFollowUp, balanceHI, Sigma["T2"], homogeneity, variability)
+          self.doLongitudinalExams(inputT2Volume, "T2", lesionMapT2, outputFolder, numberFollowUp, balanceHI, Sigma["T2"], variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in T2 volume.")
       if inputPDVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on PD volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on PD volume...")
-          self.doLongitudinalExams(inputPDVolume, "PD", lesionMapPD, outputFolder, numberFollowUp, balanceHI, Sigma["PD"], homogeneity, variability)
+          self.doLongitudinalExams(inputPDVolume, "PD", lesionMapPD, outputFolder, numberFollowUp, balanceHI, Sigma["PD"], variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in PD volume.")
       if inputFAVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on DTI-FA volume...")
-          self.doLongitudinalExams(inputFAVolume, "DTI-FA", lesionMapFA, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-FA"], homogeneity, variability)
+          self.doLongitudinalExams(inputFAVolume, "DTI-FA", lesionMapFA, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-FA"], variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in FA volume.")
       if inputADCVolume is not None:
         try:
           slicer.util.showStatusMessage("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
           logging.info("Extra: Generating longitudinal lesion deformation on DTI-ADC volume...")
-          self.doLongitudinalExams(inputADCVolume, "DTI-ADC", lesionMapADC, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-ADC"], homogeneity, variability)
+          self.doLongitudinalExams(inputADCVolume, "DTI-ADC", lesionMapADC, outputFolder, numberFollowUp, balanceHI, Sigma["DTI-ADC"], variability)
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in ADC volume.")
 
@@ -800,7 +798,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     cliParams = {'inputVolume': inputVolume, 'inputMask': inputMask, 'outputVolume': resultMask, 'cutFactor': cutFactor}
     return( slicer.cli.run(slicer.modules.filtermask, None, cliParams, wait_for_completion=True) )
 
-  def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, homogeneity, variability):
+  def doSimulateLesions(self, inputVolume, imageModality, lesionLabel, outputVolume, sigma, variability):
     """
     Execute the DeformImage CLI
     :param inputVolume:
@@ -808,7 +806,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     :param lesionLabel:
     :param outputVolume:
     :param sigma:
-    :param homogeneity:
     :param variability:
     :return:
     """
@@ -818,7 +815,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     params["lesionLabel"] = lesionLabel.GetID()
     params["outputVolume"] = outputVolume.GetID()
     params["sigma"] = sigma
-    params["homogeneity"] = homogeneity
     params["variability"] = variability
 
     slicer.cli.run(slicer.modules.deformimage, None, params, wait_for_completion=True)
@@ -850,7 +846,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     slicer.cli.run(slicer.modules.brainsresample, None, params, wait_for_completion=True)
 
-  def doLongitudinalExams(self, inputVolume, imageModality, lesionLabel, outputFolder, numberFollowUp, balanceHI, sigma, homogeneity, variability):
+  def doLongitudinalExams(self, inputVolume, imageModality, lesionLabel, outputFolder, numberFollowUp, balanceHI, sigma, variability):
     """
     Execute the SimulateLongitudinalLesions CLI
     :param inputVolume:
@@ -861,7 +857,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     :param outputFolder:
     :param variability:
     :param sigma:
-    :param homogeneity:
     :return:
     """
     params = {}
@@ -872,7 +867,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     params["balanceHI"] = balanceHI
     params["outputFolder"] = outputFolder
     params["sigma"] = sigma
-    params["homogeneity"] = homogeneity
     params["variability"] = variability
 
     slicer.cli.run(slicer.modules.mslongitudinalexams, None, params, wait_for_completion=True)
