@@ -181,6 +181,16 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
                                       self.setIsBETBooleanWidget)
 
     #
+    # is input data on MNI space?
+    #
+    self.setIsMNIBooleanWidget = ctk.ctkCheckBox()
+    self.setIsMNIBooleanWidget.setChecked(False)
+    self.setIsMNIBooleanWidget.setToolTip(
+      "Is the input data already in MNI space? If the input volumes are already in the MNI space, the time-consuming registration step will be skipped.")
+    parametersInputFormLayout.addRow("Is data in MNI space?",
+                                     self.setIsMNIBooleanWidget)
+
+    #
     # Lesion Load value
     #
     self.lesionLoadSliderWidget = ctk.ctkSliderWidget()
@@ -337,6 +347,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     logic = MSLesionSimulatorLogic()
     returnSpace = self.setReturnOriginalSpaceBooleanWidget.isChecked()
     isBET = self.setIsBETBooleanWidget.isChecked()
+    isMNI = self.setIsMNIBooleanWidget.isChecked()
     lesionLoad = self.lesionLoadSliderWidget.value
     # sigma = self.setLesionSigmaWidget.value
     # variability = self.setLesionVariabilityWidget.value
@@ -356,6 +367,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
               , self.inputADCSelector.currentNode()
               , returnSpace
               , isBET
+              , isMNI
               , lesionLoad
               , isLongitudinal
               , numberFollowUp
@@ -395,7 +407,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
-          inputFAVolume, inputADCVolume, returnSpace, isBET,
+          inputFAVolume, inputADCVolume, returnSpace, isBET, isMNI,
           lesionLoad, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
           cutFraction, samplingPerc, grid, initiationMethod):
     """
@@ -403,24 +415,24 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     """
 
     #
-    # Defines reference image modality based on pre-defined order
+    # Defines reference image modality based on pre-defined order if data is not in MNI space
     #
-
-    if inputT1Volume is not None:
-      referenceVolume = inputT1Volume
-      logging.info('T1 volume found. Will be used as reference space.')
-    elif inputT2Volume is not None:
-      referenceVolume = inputT2Volume
-      logging.info('T2 volume found. Will be used as reference space.')
-    elif inputFLAIRVolume is not None:
-      referenceVolume = inputFLAIRVolume
-      logging.info('FLAIR volume found. Will be used as reference space.')
-    elif inputPDVolume is not None:
-      referenceVolume = inputPDVolume
-      logging.info('PD volume found. Will be used as reference space.')
-    else:
-      logging.info('ERROR: At least one structural image should be provided. Aborting.')
-      return False
+    if not isMNI:
+      if inputT1Volume is not None:
+        referenceVolume = inputT1Volume
+        logging.info('T1 volume found. Will be used as reference space.')
+      elif inputT2Volume is not None:
+        referenceVolume = inputT2Volume
+        logging.info('T2 volume found. Will be used as reference space.')
+      elif inputFLAIRVolume is not None:
+        referenceVolume = inputFLAIRVolume
+        logging.info('FLAIR volume found. Will be used as reference space.')
+      elif inputPDVolume is not None:
+        referenceVolume = inputPDVolume
+        logging.info('PD volume found. Will be used as reference space.')
+      else:
+        logging.info('ERROR: At least one structural image should be provided. Aborting.')
+        return False
 
     logging.info('Processing started')
     slicer.util.showStatusMessage("Processing started")
@@ -428,57 +440,57 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     # Data space normalization to T1 space
     #
     volumesLogic = slicer.modules.volumes.logic()
+    if not isMNI:
+      if inputT2Volume is not None and inputT2Volume is not referenceVolume:
+        try:
+          slicer.util.showStatusMessage("Pre-processing: Conforming T2 volume to reference space...")
+          regT2toRefTransform = slicer.vtkMRMLLinearTransformNode()
+          slicer.mrmlScene.AddNode(regT2toRefTransform)
+          clonedT2Volume = volumesLogic.CloneVolume(slicer.mrmlScene, inputT2Volume, "Cloned T2")
 
-    if inputT2Volume is not None and inputT2Volume is not referenceVolume:
-      try:
-        slicer.util.showStatusMessage("Pre-processing: Conforming T2 volume to reference space...")
-        regT2toRefTransform = slicer.vtkMRMLLinearTransformNode()
-        slicer.mrmlScene.AddNode(regT2toRefTransform)
-        clonedT2Volume = volumesLogic.CloneVolume(slicer.mrmlScene, inputT2Volume, "Cloned T2")
+          self.conformInputSpace(referenceVolume, inputT2Volume, inputT2Volume, regT2toRefTransform)
+        except:
+          logging.info("Exception caught when trying to conform T2 image to reference space.")
+      if inputFLAIRVolume is not None and inputFLAIRVolume is not referenceVolume:
+        try:
+          slicer.util.showStatusMessage("Pre-processing: Conforming T2-FLAIR volume to reference space...")
+          regFLAIRtoRefTransform = slicer.vtkMRMLLinearTransformNode()
+          slicer.mrmlScene.AddNode(regFLAIRtoRefTransform)
+          clonedFLAIRVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFLAIRVolume, "Cloned FLAIR")
 
-        self.conformInputSpace(referenceVolume, inputT2Volume, inputT2Volume, regT2toRefTransform)
-      except:
-        logging.info("Exception caught when trying to conform T2 image to reference space.")
-    if inputFLAIRVolume is not None and inputFLAIRVolume is not referenceVolume:
-      try:
-        slicer.util.showStatusMessage("Pre-processing: Conforming T2-FLAIR volume to reference space...")
-        regFLAIRtoRefTransform = slicer.vtkMRMLLinearTransformNode()
-        slicer.mrmlScene.AddNode(regFLAIRtoRefTransform)
-        clonedFLAIRVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFLAIRVolume, "Cloned FLAIR")
+          self.conformInputSpace(referenceVolume, inputFLAIRVolume, inputFLAIRVolume, regFLAIRtoRefTransform)
+        except:
+          logging.info("Exception caught when trying to create node for T2-FLAIR image in reference space.")
+      if inputPDVolume is not None and inputPDVolume is not referenceVolume:
+        try:
+          slicer.util.showStatusMessage("Pre-processing: Conforming PD volume to reference space...")
+          regPDtoRefTransform = slicer.vtkMRMLLinearTransformNode()
+          slicer.mrmlScene.AddNode(regPDtoRefTransform)
+          clonedPDVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputPDVolume, "Cloned PD")
 
-        self.conformInputSpace(referenceVolume, inputFLAIRVolume, inputFLAIRVolume, regFLAIRtoRefTransform)
-      except:
-        logging.info("Exception caught when trying to create node for T2-FLAIR image in reference space.")
-    if inputPDVolume is not None and inputPDVolume is not referenceVolume:
-      try:
-        slicer.util.showStatusMessage("Pre-processing: Conforming PD volume to reference space...")
-        regPDtoRefTransform = slicer.vtkMRMLLinearTransformNode()
-        slicer.mrmlScene.AddNode(regPDtoRefTransform)
-        clonedPDVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputPDVolume, "Cloned PD")
+          self.conformInputSpace(referenceVolume, inputPDVolume, inputPDVolume, regPDtoRefTransform)
+        except:
+          logging.info("Exception caught when trying to create node for PD image in reference space.")
+      if inputFAVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Pre-processing: Conforming DTI-FA map to reference space...")
+          regFAtoRefTransform = slicer.vtkMRMLLinearTransformNode()
+          slicer.mrmlScene.AddNode(regFAtoRefTransform)
+          clonedFAVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFAVolume, "Cloned FA")
 
-        self.conformInputSpace(referenceVolume, inputPDVolume, inputPDVolume, regPDtoRefTransform)
-      except:
-        logging.info("Exception caught when trying to create node for PD image in reference space.")
-    if inputFAVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Pre-processing: Conforming DTI-FA map to reference space...")
-        regFAtoRefTransform = slicer.vtkMRMLLinearTransformNode()
-        slicer.mrmlScene.AddNode(regFAtoRefTransform)
-        clonedFAVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFAVolume, "Cloned FA")
+          self.conformInputSpace(referenceVolume, inputFAVolume, inputFAVolume, regFAtoRefTransform)
+        except:
+          logging.info("Exception caught when trying to create node for FA image in reference space.")
+      if inputADCVolume is not None:
+        try:
+          slicer.util.showStatusMessage("Pre-processing: Conforming DTI-ADC map to reference space...")
+          regADCtoRefTransform = slicer.vtkMRMLLinearTransformNode()
+          slicer.mrmlScene.AddNode(regADCtoRefTransform)
+          clonedADCVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputADCVolume, "Cloned ADC")
 
-        self.conformInputSpace(referenceVolume, inputFAVolume, inputFAVolume, regFAtoRefTransform)
-      except:
-        logging.info("Exception caught when trying to create node for FA image in reference space.")
-    if inputADCVolume is not None:
-      try:
-        slicer.util.showStatusMessage("Pre-processing: Conforming DTI-ADC map to reference space...")
-        regADCtoRefTransform = slicer.vtkMRMLLinearTransformNode()
-        slicer.mrmlScene.AddNode(regADCtoRefTransform)
-        clonedADCVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputADCVolume, "Cloned ADC")
-
-        self.conformInputSpace(referenceVolume, inputADCVolume, inputADCVolume, regADCtoRefTransform)
-      except:
-        logging.info("Exception caught when trying to create node for ADC image in reference space.")
+          self.conformInputSpace(referenceVolume, inputADCVolume, inputADCVolume, regADCtoRefTransform)
+        except:
+          logging.info("Exception caught when trying to create node for ADC image in reference space.")
 
     slicer.util.showStatusMessage("Step 1/4: Reading brain templates...")
     logging.info("Step 1/5: Reading brain templates...")
@@ -495,6 +507,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # Registration between Input Image and MNI Image Space
     #
+
     slicer.util.showStatusMessage("Step 2/4: MNI152 template to native space...")
     logging.info("Step 3/5: MNI152 template to native space...")
     if isBET:
@@ -508,12 +521,13 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       else:
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz",{},True)
 
-    MNI_ref = slicer.vtkMRMLScalarVolumeNode()
-    slicer.mrmlScene.AddNode(MNI_ref)
-    regMNItoRefTransform = slicer.vtkMRMLBSplineTransformNode()
-    slicer.mrmlScene.AddNode(regMNItoRefTransform)
+    if not isMNI:
+      MNI_ref = slicer.vtkMRMLScalarVolumeNode()
+      slicer.mrmlScene.AddNode(MNI_ref)
+      regMNItoRefTransform = slicer.vtkMRMLBSplineTransformNode()
+      slicer.mrmlScene.AddNode(regMNItoRefTransform)
 
-    self.doNonLinearRegistration(referenceVolume, MNINode, MNI_ref, regMNItoRefTransform, samplingPerc, grid, initiationMethod)
+      self.doNonLinearRegistration(referenceVolume, MNINode, MNI_ref, regMNItoRefTransform, samplingPerc, grid, initiationMethod)
 
     #
     # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
@@ -531,11 +545,12 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     # Transforming lesion map to native space
 
-    # Get transform logic for hardening transforms
-    transformLogic = slicer.vtkSlicerTransformLogic()
+    if not isMNI:
+      # Get transform logic for hardening transforms
+      transformLogic = slicer.vtkSlicerTransformLogic()
 
-    self.applyRegistrationTransform(lesionMap,referenceVolume,lesionMap,regMNItoRefTransform,False, True)
-    transformLogic.hardenTransform(lesionMap)
+      self.applyRegistrationTransform(lesionMap,referenceVolume,lesionMap,regMNItoRefTransform,False, True)
+      transformLogic.hardenTransform(lesionMap)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
     if inputT1Volume is not None:
@@ -688,7 +703,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # Return inputs to its original space
     #
-    if returnSpace:
+    if returnSpace and not isMNI:
       if inputT2Volume is not None and inputT2Volume is not referenceVolume:
         try:
           slicer.util.showStatusMessage("post-processing: Returning T2 image space...")
@@ -731,41 +746,42 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           logging.info("Exception caught when trying to return ADC image space.")
 
     # Removing unnecessary nodes
-    slicer.mrmlScene.RemoveNode(MNI_ref)
-    slicer.mrmlScene.RemoveNode(regMNItoRefTransform)
-    slicer.mrmlScene.RemoveNode(MNINode)
     slicer.mrmlScene.RemoveNode(lesionMap)
+    slicer.mrmlScene.RemoveNode(MNINode)
+    if not isMNI:
+      slicer.mrmlScene.RemoveNode(MNI_ref)
+      slicer.mrmlScene.RemoveNode(regMNItoRefTransform)
 
-    if inputFLAIRVolume is not None and inputFLAIRVolume is not referenceVolume:
-      try:
-        slicer.mrmlScene.RemoveNode(regFLAIRtoRefTransform)
-        slicer.mrmlScene.RemoveNode(clonedFLAIRVolume)
-      except:
-        logging.info('Exception caught when trying to delete FLAIR in T1 space node.')
-    if inputT2Volume is not None and inputT2Volume is not referenceVolume:
-      try:
-        slicer.mrmlScene.RemoveNode(regT2toRefTransform)
-        slicer.mrmlScene.RemoveNode(clonedT2Volume)
-      except:
-        logging.info('Exception caught when trying to delete T2 in T1 space node.')
-    if inputPDVolume is not None and inputPDVolume is not referenceVolume:
-      try:
-        slicer.mrmlScene.RemoveNode(regPDtoRefTransform)
-        slicer.mrmlScene.RemoveNode(clonedPDVolume)
-      except:
-        logging.info('Exception caught when trying to delete PD in T1 space node.')
-    if inputFAVolume is not None:
-      try:
-        slicer.mrmlScene.RemoveNode(regFAtoRefTransform)
-        slicer.mrmlScene.RemoveNode(clonedFAVolume)
-      except:
-        logging.info('Exception caught when trying to delete FA in T1 space node.')
-    if inputADCVolume is not None:
-      try:
-        slicer.mrmlScene.RemoveNode(regADCtoRefTransform)
-        slicer.mrmlScene.RemoveNode(clonedADCVolume)
-      except:
-        logging.info('Exception caught when trying to delete ADC in T1 space node.')
+      if inputFLAIRVolume is not None and inputFLAIRVolume is not referenceVolume:
+        try:
+          slicer.mrmlScene.RemoveNode(regFLAIRtoRefTransform)
+          slicer.mrmlScene.RemoveNode(clonedFLAIRVolume)
+        except:
+          logging.info('Exception caught when trying to delete FLAIR in T1 space node.')
+      if inputT2Volume is not None and inputT2Volume is not referenceVolume:
+        try:
+          slicer.mrmlScene.RemoveNode(regT2toRefTransform)
+          slicer.mrmlScene.RemoveNode(clonedT2Volume)
+        except:
+          logging.info('Exception caught when trying to delete T2 in T1 space node.')
+      if inputPDVolume is not None and inputPDVolume is not referenceVolume:
+        try:
+          slicer.mrmlScene.RemoveNode(regPDtoRefTransform)
+          slicer.mrmlScene.RemoveNode(clonedPDVolume)
+        except:
+          logging.info('Exception caught when trying to delete PD in T1 space node.')
+      if inputFAVolume is not None:
+        try:
+          slicer.mrmlScene.RemoveNode(regFAtoRefTransform)
+          slicer.mrmlScene.RemoveNode(clonedFAVolume)
+        except:
+          logging.info('Exception caught when trying to delete FA in T1 space node.')
+      if inputADCVolume is not None:
+        try:
+          slicer.mrmlScene.RemoveNode(regADCtoRefTransform)
+          slicer.mrmlScene.RemoveNode(clonedADCVolume)
+        except:
+          logging.info('Exception caught when trying to delete ADC in T1 space node.')
 
     slicer.util.showStatusMessage("Processing completed")
     logging.info('Processing completed')
