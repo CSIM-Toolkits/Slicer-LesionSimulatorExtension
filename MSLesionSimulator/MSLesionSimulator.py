@@ -434,6 +434,11 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         logging.info('ERROR: At least one structural image should be provided. Aborting.')
         return False
 
+    #
+    # Defines count variable for step progression log
+    #
+    currentStep = 1
+
     logging.info('Processing started')
     slicer.util.showStatusMessage("Processing started")
     #
@@ -492,8 +497,9 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         except:
           logging.info("Exception caught when trying to create node for ADC image in reference space.")
 
-    slicer.util.showStatusMessage("Step 1/4: Reading brain templates...")
-    logging.info("Step 1/5: Reading brain templates...")
+    slicer.util.showStatusMessage("Step "+str(currentStep)+": Reading brain templates...")
+    logging.info("Step "+str(currentStep)+": Reading brain templates...")
+    currentStep+=1
 
     modulePath = os.path.dirname(slicer.modules.mslesionsimulator.path)
 
@@ -504,12 +510,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
       databasePath = modulePath + "/Resources/MSlesion_database"
 
-    #
-    # Registration between Input Image and MNI Image Space
-    #
-
-    slicer.util.showStatusMessage("Step 2/4: MNI152 template to native space...")
-    logging.info("Step 3/5: MNI152 template to native space...")
     if isBET:
       if platform.system() is "Windows":
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz",{},True)
@@ -522,6 +522,14 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz",{},True)
 
     if not isMNI:
+      #
+      # Registration between Input Image and MNI Image Space
+      #
+
+      slicer.util.showStatusMessage("Step " + str(currentStep) + ": MNI152 template to native space...")
+      logging.info("Step " + str(currentStep) + ": MNI152 template to native space...")
+      currentStep += 1
+
       MNI_ref = slicer.vtkMRMLScalarVolumeNode()
       slicer.mrmlScene.AddNode(MNI_ref)
       regMNItoRefTransform = slicer.vtkMRMLBSplineTransformNode()
@@ -532,8 +540,9 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     #
     # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
     #
-    slicer.util.showStatusMessage("Step 3/4: Simulating MS lesion map...")
-    logging.info("Step 4/5: Simulating MS lesion map...")
+    slicer.util.showStatusMessage("Step "+str(currentStep)+": Simulating MS lesion map...")
+    logging.info("Step "+str(currentStep)+": Simulating MS lesion map...")
+    currentStep+=1
 
     lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
     slicer.mrmlScene.AddNode(lesionMap)
@@ -613,43 +622,43 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     if not isLongitudinal:
       if inputT1Volume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T1 volume...")
-          logging.info("Step 5/5: Applying lesion deformation on T1 volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on T1 volume...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on T1 volume...")
           self.doSimulateLesions(inputT1Volume, "T1", lesionMapT1, inputT1Volume, Sigma["T1"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in T1 volume.")
       if inputFLAIRVolume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2-FLAIR volume...")
-          logging.info("Step 5/5: Applying lesion deformation on T2-FLAIR volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on T2-FLAIR volume...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on T2-FLAIR volume...")
           self.doSimulateLesions(inputFLAIRVolume, "T2-FLAIR", lesionMapFLAIR, inputFLAIRVolume, Sigma["T2FLAIR"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in T2-FLAIR volume.")
       if inputT2Volume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on T2 volume...")
-          logging.info("Step 5/5: Applying lesion deformation on T2 volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on T2 volume...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on T2 volume...")
           self.doSimulateLesions(inputT2Volume, "T2", lesionMapT2, inputT2Volume, Sigma["T2"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in T2 volume.")
       if inputPDVolume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on PD volume...")
-          logging.info("Step 5/5: Applying lesion deformation on PD volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on PD volume...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on PD volume...")
           self.doSimulateLesions(inputPDVolume, "PD", lesionMapPD, inputPDVolume, Sigma["PD"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in PD volume.")
       if inputFAVolume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-FA map...")
-          logging.info("Step 5/5: Applying lesion deformation on DTI-FA volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on DTI-FA map...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on DTI-FA volume...")
           self.doSimulateLesions(inputFAVolume, "DTI-FA", lesionMapFA, inputFAVolume, Sigma["DTI-FA"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in FA volume.")
       if inputADCVolume is not None:
         try:
-          slicer.util.showStatusMessage("Step 4/4: Applying lesion deformation on DTI-ADC map...")
-          logging.info("Step 5/5: Applying lesion deformation on DTI-ADC volume...")
+          slicer.util.showStatusMessage("Step "+str(currentStep)+": Applying lesion deformation on DTI-ADC map...")
+          logging.info("Step "+str(currentStep)+": Applying lesion deformation on DTI-ADC volume...")
           self.doSimulateLesions(inputADCVolume, "DTI-ADC", lesionMapADC, inputADCVolume, Sigma["DTI-ADC"], variability)
         except:
           logging.info("Exception caught when trying to apply lesion deformation in ADC volume.")
@@ -700,6 +709,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
         except:
           logging.info("Exception caught when trying to generate longitudinal lesion deformation in ADC volume.")
 
+    currentStep+=1
     #
     # Return inputs to its original space
     #
