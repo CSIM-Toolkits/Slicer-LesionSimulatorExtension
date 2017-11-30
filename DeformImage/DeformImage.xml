@@ -16,7 +16,7 @@
       <label>Input Volume</label>
       <channel>input</channel>
       <index>0</index>
-      <description><![CDATA[]]></description>
+      <description><![CDATA[Input Volume]]></description>
     </image>
     <string-enumeration>
 	      <name>imageModality</name>
