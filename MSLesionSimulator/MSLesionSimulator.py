@@ -160,21 +160,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     parametersInputFormLayout.addRow("DTI-ADC Map ", self.inputADCSelector)
 
     #
-    # output lesion mask volume selector
-    #
-    self.outputLesionSelector = slicer.qMRMLNodeComboBox()
-    self.outputLesionSelector.nodeTypes = ["vtkMRMLLabelMapVolumeNode"]
-    self.outputLesionSelector.selectNodeUponCreation = True
-    self.outputLesionSelector.addEnabled = True
-    self.outputLesionSelector.removeEnabled = True
-    self.outputLesionSelector.noneEnabled = False
-    self.outputLesionSelector.showHidden = False
-    self.outputLesionSelector.showChildNodeTypes = False
-    self.outputLesionSelector.setMRMLScene(slicer.mrmlScene)
-    self.outputLesionSelector.setToolTip("Generated lesion mask output.")
-    parametersInputFormLayout.addRow("Output Lesion Mask ", self.outputLesionSelector)
-
-    #
     # Return inputs to original space
     #
     self.setReturnOriginalSpaceBooleanWidget = ctk.ctkCheckBox()
@@ -342,7 +327,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     self.inputT2Selector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
     self.inputFLAIRSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
     self.inputPDSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
-    self.outputLesionSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
 
     # Add vertical spacer
     self.layout.addStretch(1)
@@ -354,11 +338,10 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     pass
 
   def onSelect(self):
-    self.applyButton.enabled = (self.inputT1Selector.currentNode()\
+    self.applyButton.enabled = self.inputT1Selector.currentNode()\
                                or self.inputT2Selector.currentNode()\
                                or self.inputFLAIRSelector.currentNode()\
-                               or self.inputPDSelector.currentNode())\
-                               and self.outputLesionSelector.currentNode()
+                               or self.inputPDSelector.currentNode()
 
   def onApplyButton(self):
     logic = MSLesionSimulatorLogic()
@@ -382,7 +365,6 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
               , self.inputPDSelector.currentNode()
               , self.inputFASelector.currentNode()
               , self.inputADCSelector.currentNode()
-              , self.outputLesionSelector.currentNode()
               , returnSpace
               , isBET
               , isMNI
@@ -425,7 +407,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
 
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
-          inputFAVolume, inputADCVolume, outputLesionVolume, returnSpace, isBET, isMNI,
+          inputFAVolume, inputADCVolume, returnSpace, isBET, isMNI,
           lesionLoad, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
           cutFraction, samplingPerc, grid, initiationMethod):
     """
@@ -451,10 +433,6 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       else:
         logging.info('ERROR: At least one structural image should be provided. Aborting.')
         return False
-
-    if outputLesionVolume is None:
-      logging.info('ERROR: Output volume for lesion mask must be selected. Aborting.')
-      return False
 
     #
     # Defines count variable for step progression log
@@ -566,12 +544,12 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     logging.info("Step "+str(currentStep)+": Simulating MS lesion map...")
     currentStep+=1
 
-    # outputLesionVolume = slicer.vtkMRMLLabelMapVolumeNode()
-    # slicer.mrmlScene.AddNode(lesionMap)
+    lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
+    slicer.mrmlScene.AddNode(lesionMap)
     if platform.system() is "Windows":
-      self.doGenerateMask(MNINode, lesionLoad, outputLesionVolume, databasePath+"\\labels-database")
+      self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
-      self.doGenerateMask(MNINode, lesionLoad, outputLesionVolume, databasePath + "/labels-database")
+      self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath + "/labels-database")
 
 
     # Transforming lesion map to native space
@@ -580,8 +558,8 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       # Get transform logic for hardening transforms
       transformLogic = slicer.vtkSlicerTransformLogic()
 
-      self.applyRegistrationTransform(outputLesionVolume,referenceVolume,outputLesionVolume,regMNItoRefTransform,False, True)
-      transformLogic.hardenTransform(outputLesionVolume)
+      self.applyRegistrationTransform(lesionMap,referenceVolume,lesionMap,regMNItoRefTransform,False, True)
+      transformLogic.hardenTransform(lesionMap)
 
     # Filtering lesion map to minimize or exclude regions outside of WM
     if inputT1Volume is not None:
@@ -589,42 +567,43 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       lesionMapT1 = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapT1)
       lesionMapT1.SetName("T1_lesion_label")
-      self.doFilterMask(inputT1Volume, outputLesionVolume, lesionMapT1, cutFraction)
+      self.doFilterMask(inputT1Volume, lesionMap, lesionMapT1, cutFraction)
 
     if inputFLAIRVolume is not None:
       # Lesion Map: T2-FLAIR
       lesionMapFLAIR = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapFLAIR)
       lesionMapFLAIR.SetName("T2FLAIR_lesion_label")
-      self.doFilterMask(inputFLAIRVolume, outputLesionVolume, lesionMapFLAIR, cutFraction)
+      self.doFilterMask(inputFLAIRVolume, lesionMap, lesionMapFLAIR, cutFraction)
 
     if inputT2Volume is not None:
       # Lesion Map: T2
       lesionMapT2 = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapT2)
       lesionMapT2.SetName("T2_lesion_label")
-      self.doFilterMask(inputT2Volume, outputLesionVolume, lesionMapT2, cutFraction)
+      self.doFilterMask(inputT2Volume, lesionMap, lesionMapT2, cutFraction)
 
     if inputPDVolume is not None:
       # Lesion Map: PD
       lesionMapPD = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapPD)
       lesionMapPD.SetName("PD_lesion_label")
-      self.doFilterMask(inputPDVolume, outputLesionVolume, lesionMapPD, cutFraction)
+      self.doFilterMask(inputPDVolume, lesionMap, lesionMapPD, cutFraction)
 
     if inputFAVolume is not None:
       # Lesion Map: DTI-FA
       lesionMapFA = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapFA)
       lesionMapFA.SetName("FA_lesion_label")
-      self.doFilterMask(inputFAVolume, outputLesionVolume, lesionMapFA, cutFraction)
+      self.doFilterMask(inputFAVolume, lesionMap, lesionMapFA, cutFraction)
 
     if inputADCVolume is not None:
       # Lesion Map: DTI-FA
       lesionMapADC = slicer.vtkMRMLLabelMapVolumeNode()
       slicer.mrmlScene.AddNode(lesionMapADC)
       lesionMapADC.SetName("ADC_lesion_label")
-      self.doFilterMask(inputADCVolume, outputLesionVolume, lesionMapADC, cutFraction)
+      self.doFilterMask(inputADCVolume, lesionMap, lesionMapADC, cutFraction)
+
 
     #
     # Generating lesions in each input image
