@@ -21,6 +21,7 @@ from user import home
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 import logging
+import multiprocessing
 
 #
 # MSLesionSimulator
@@ -314,6 +315,17 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     parametersAdvancedParametersFormLayout.addRow("Initiation Method ", self.setInitiationRegistrationBooleanWidget)
 
     #
+    # Number of Threads in Segmentation Steps
+    #
+    self.setNumberOfThreadsWidget = qt.QSpinBox()
+    self.setNumberOfThreadsWidget.setMaximum(multiprocessing.cpu_count())
+    self.setNumberOfThreadsWidget.setMinimum(-1)
+    self.setNumberOfThreadsWidget.setSingleStep(1)
+    self.setNumberOfThreadsWidget.setValue(-1)
+    self.setNumberOfThreadsWidget.setToolTip("Number of threads to be used in segmentation steps. -1 equals to all possible threads being used.")
+    parametersAdvancedParametersFormLayout.addRow("Number of Threads ", self.setNumberOfThreadsWidget)
+
+    #
     # Apply Button
     #
     self.applyButton = qt.QPushButton("Apply")
@@ -359,6 +371,8 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     samplingPerc = self.setPercSamplingQWidget.value
     grid = self.setBSplineGridWidget.text
     initiationMethod = self.setInitiationRegistrationBooleanWidget.currentText
+    numberOfThreads = self.setNumberOfThreadsWidget.value
+
     logic.run(self.inputT1Selector.currentNode()
               , self.inputFLAIRSelector.currentNode()
               , self.inputT2Selector.currentNode()
@@ -376,7 +390,8 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
               , cutFraction
               , samplingPerc
               , grid
-              , initiationMethod)
+              , initiationMethod
+              , numberOfThreads)
 
 #
 # MSLesionSimulatorLogic
@@ -409,7 +424,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
   def run(self, inputT1Volume, inputFLAIRVolume, inputT2Volume, inputPDVolume,
           inputFAVolume, inputADCVolume, returnSpace, isBET, isMNI,
           lesionLoad, isLongitudinal, numberFollowUp, balanceHI, outputFolder,
-          cutFraction, samplingPerc, grid, initiationMethod):
+          cutFraction, samplingPerc, grid, initiationMethod, numberOfThreads):
     """
     Run the actual algorithm
     """
@@ -453,7 +468,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.AddNode(regT2toRefTransform)
           clonedT2Volume = volumesLogic.CloneVolume(slicer.mrmlScene, inputT2Volume, "Cloned T2")
 
-          self.conformInputSpace(referenceVolume, inputT2Volume, inputT2Volume, regT2toRefTransform)
+          self.conformInputSpace(referenceVolume, inputT2Volume, inputT2Volume, regT2toRefTransform, numberOfThreads)
         except:
           logging.info("Exception caught when trying to conform T2 image to reference space.")
       if inputFLAIRVolume is not None and inputFLAIRVolume is not referenceVolume:
@@ -463,7 +478,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.AddNode(regFLAIRtoRefTransform)
           clonedFLAIRVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFLAIRVolume, "Cloned FLAIR")
 
-          self.conformInputSpace(referenceVolume, inputFLAIRVolume, inputFLAIRVolume, regFLAIRtoRefTransform)
+          self.conformInputSpace(referenceVolume, inputFLAIRVolume, inputFLAIRVolume, regFLAIRtoRefTransform, numberOfThreads)
         except:
           logging.info("Exception caught when trying to create node for T2-FLAIR image in reference space.")
       if inputPDVolume is not None and inputPDVolume is not referenceVolume:
@@ -473,7 +488,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.AddNode(regPDtoRefTransform)
           clonedPDVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputPDVolume, "Cloned PD")
 
-          self.conformInputSpace(referenceVolume, inputPDVolume, inputPDVolume, regPDtoRefTransform)
+          self.conformInputSpace(referenceVolume, inputPDVolume, inputPDVolume, regPDtoRefTransform, numberOfThreads)
         except:
           logging.info("Exception caught when trying to create node for PD image in reference space.")
       if inputFAVolume is not None:
@@ -483,7 +498,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.AddNode(regFAtoRefTransform)
           clonedFAVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputFAVolume, "Cloned FA")
 
-          self.conformInputSpace(referenceVolume, inputFAVolume, inputFAVolume, regFAtoRefTransform)
+          self.conformInputSpace(referenceVolume, inputFAVolume, inputFAVolume, regFAtoRefTransform, numberOfThreads)
         except:
           logging.info("Exception caught when trying to create node for FA image in reference space.")
       if inputADCVolume is not None:
@@ -493,7 +508,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.AddNode(regADCtoRefTransform)
           clonedADCVolume = volumesLogic.CloneVolume(slicer.mrmlScene, inputADCVolume, "Cloned ADC")
 
-          self.conformInputSpace(referenceVolume, inputADCVolume, inputADCVolume, regADCtoRefTransform)
+          self.conformInputSpace(referenceVolume, inputADCVolume, inputADCVolume, regADCtoRefTransform, numberOfThreads)
         except:
           logging.info("Exception caught when trying to create node for ADC image in reference space.")
 
@@ -535,7 +550,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       regMNItoRefTransform = slicer.vtkMRMLBSplineTransformNode()
       slicer.mrmlScene.AddNode(regMNItoRefTransform)
 
-      self.doNonLinearRegistration(referenceVolume, MNINode, MNI_ref, regMNItoRefTransform, samplingPerc, grid, initiationMethod)
+      self.doNonLinearRegistration(referenceVolume, MNINode, MNI_ref, regMNItoRefTransform, samplingPerc, grid, initiationMethod, numberOfThreads)
 
     #
     # Find lesion mask using Probability Image, lesion labels and desired Lesion Load
@@ -799,7 +814,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     return True
 
 
-  def conformInputSpace(self, fixedNode, movingNode, resultNode, transform):
+  def conformInputSpace(self, fixedNode, movingNode, resultNode, transform, numberOfThreads):
     regParams = {}
     regParams["fixedVolume"] = fixedNode.GetID()
     regParams["movingVolume"] = movingNode.GetID()
@@ -809,10 +824,11 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     regParams["initializeTransformMode"] = "useMomentsAlign"
     regParams["useRigid"] = True
     regParams["useAffine"] = True
+    regParams["numberOfThreads"] = numberOfThreads
 
     slicer.cli.run(slicer.modules.brainsfit, None, regParams, wait_for_completion=True)
 
-  def doNonLinearRegistration(self, fixedNode, movingNode, resultNode, transform, samplePerc, grid, initiationMethod):
+  def doNonLinearRegistration(self, fixedNode, movingNode, resultNode, transform, samplePerc, grid, initiationMethod, numberOfThreads):
     """
     Execute the BrainsFit registration
     :param fixedNode:
@@ -833,6 +849,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
     regParams["useRigid"] = True
     regParams["useAffine"] = True
     regParams["useBSpline"] = True
+    regParams["numberOfThreads"] = numberOfThreads
 
     slicer.cli.run(slicer.modules.brainsfit, None, regParams, wait_for_completion=True)
 
