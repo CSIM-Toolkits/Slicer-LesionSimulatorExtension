@@ -153,7 +153,7 @@ int DoIt( int argc, char * argv[], T )
     sortLesions->SetInput(connectedLesions->GetOutput());
     sortLesions->SetSortByObjectSize(true);
     sortLesions->Update();
-    int nLesion = sortLesions->GetNumberOfObjects();
+    unsigned int nLesion = sortLesions->GetNumberOfObjects();
     cout<<"Number of considered lesions: "<<nLesion<<endl;
 
     float DClevel=0.0;
@@ -171,6 +171,13 @@ int DoIt( int argc, char * argv[], T )
         DClevel = static_cast<float>(normalGenerator->GetVariate());
         while(abs(DClevel)>variability*sqrt(gaussian->GetVariance())){
             DClevel = static_cast<float>(normalGenerator->GetVariate());
+        }
+
+        //Modulate the DC level depending on the image modality. T1 and DTI-FA should always give hypointensity
+        if (imageModality=="T1" || imageModality=="DTI-FA") {
+            DClevel = abs(DClevel)*(-1.0);
+        }else{ // and other image modalities should be otherwise, i.e. hyperintense.
+            DClevel = abs(DClevel);
         }
 
         while (!addLesion.IsAtEnd()) {

@@ -36,7 +36,7 @@
       <name>cutFactor</name>
       <label>Cut Factor</label>
       <channel>input</channel>
-      <index>4</index>
+      <index>3</index>
       <description><![CDATA[Factor to be multiplied by standard deviation to define cutoff thresholds for outlier removal.]]></description>
       <default>1.5</default>
     </double>

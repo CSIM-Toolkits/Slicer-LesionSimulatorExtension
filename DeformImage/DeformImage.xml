@@ -73,7 +73,7 @@
       <longflag>--t1Contrast</longflag>
       <label>T1 Lesion Contrast</label>
       <description><![CDATA[...]]></description>
-      <default>0.791</default>
+      <default>0.591</default>
     </double>
     <double>
       <name>t1Std</name>
