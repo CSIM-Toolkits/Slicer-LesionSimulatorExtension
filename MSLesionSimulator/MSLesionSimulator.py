@@ -16,7 +16,6 @@ import unittest
 import sys
 import platform
 from os.path import expanduser
-from user import home
 
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
