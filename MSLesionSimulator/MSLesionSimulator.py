@@ -250,7 +250,7 @@ class MSLesionSimulatorWidget(ScriptedLoadableModuleWidget):
     #
     self.outputFollowUpsSelector = ctk.ctkDirectoryButton()
     self.outputFollowUpsSelector.setToolTip("Output folder where follow-up image files will be saved.")
-    if platform.system() is "Windows":
+    if platform.system() == "Windows":
       home = expanduser("%userprofile%")
     else:
       home = expanduser("~")
@@ -517,7 +517,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     modulePath = os.path.dirname(slicer.modules.mslesionsimulator.path)
 
-    if platform.system() is "Windows":
+    if platform.system() == "Windows":
 
       databasePath = modulePath + "\\Resources\\MSlesion_database"
     else:
@@ -525,12 +525,12 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
       databasePath = modulePath + "/Resources/MSlesion_database"
 
     if isBET:
-      if platform.system() is "Windows":
+      if platform.system() == "Windows":
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath+"\\MNI152_T1_1mm_brain.nii.gz",{},True)
       else:
         (readSuccess,MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm_brain.nii.gz",{},True)
     else:
-      if platform.system() is "Windows":
+      if platform.system() == "Windows":
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "\\MNI152_T1_1mm.nii.gz",{},True)
       else:
         (readSuccess, MNINode)=slicer.util.loadVolume(databasePath + "/MNI152_T1_1mm.nii.gz",{},True)
@@ -560,7 +560,7 @@ class MSLesionSimulatorLogic(ScriptedLoadableModuleLogic):
 
     lesionMap = slicer.vtkMRMLLabelMapVolumeNode()
     slicer.mrmlScene.AddNode(lesionMap)
-    if platform.system() is "Windows":
+    if platform.system() == "Windows":
       self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath+"\\labels-database")
     else:
       self.doGenerateMask(MNINode, lesionLoad, lesionMap, databasePath + "/labels-database")
@@ -991,10 +991,10 @@ class MSLesionSimulatorTest(ScriptedLoadableModuleTest):
     for url,name,loader in downloads:
       filePath = slicer.app.temporaryPath + '/' + name
       if not os.path.exists(filePath) or os.stat(filePath).st_size == 0:
-        logging.info('Requesting download %s from %s...\n' % (name, url))
+        logging.info(f'Requesting download {name} from {url}...\n')
         urllib.urlretrieve(url, filePath)
       if loader:
-        logging.info('Loading %s...' % (name,))
+        logging.info(f'Loading {name}...')
         loader(filePath)
     self.delayDisplay('Finished with download and loading')
 
