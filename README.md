@@ -2,7 +2,7 @@
 
 ![Logo](https://github.com/CSIM-Toolkits/Slicer-LesionSimulatorExtension/blob/main/LesionSimulator.png)
 
-This extension is focused on providing brain lesion simulation approaches on biomedical images. More details can be found on the [wiki page](https://www.slicer.org/wiki/Documentation/Nightly/Extensions/LesionSimulator).
+This extension is focused on providing brain lesion simulation approaches on biomedical images. More details can be found on the [documentation page](https://slicer-lesionsimulatorextension.readthedocs.io/en/latest/).
 
 ![Logo](https://github.com/CSIM-Toolkits/Slicer-LesionSimulatorExtension/blob/main/docs/assets/3DLesionsOverlay.png)
 
