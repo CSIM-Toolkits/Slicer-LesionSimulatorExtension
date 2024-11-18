@@ -35,4 +35,5 @@ add_subdirectory(MSLongitudinalExams)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------
+include(${Slicer_EXTENSION_GENERATE_CONFIG})
 include(${Slicer_EXTENSION_CPACK})
